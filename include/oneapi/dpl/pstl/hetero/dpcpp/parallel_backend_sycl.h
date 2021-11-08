@@ -1151,7 +1151,7 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
         // __leaf: size of a block to sort using algorithm suitable for small sequences
         // __optimal_chunk: best size of a block to merge duiring a step of the merge sort algorithm
         // The coefficients were found experimentally
-        _Size __leaf = 4;
+        _Size __leaf = 32;
         _Size __optimal_chunk = 4;
         if (__exec.queue().get_device().is_cpu())
         {
@@ -1165,14 +1165,30 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
         const _Size __leaf_steps = ((__n - 1) / __leaf) + 1;
 
         // 1. Perform sorting of the leaves of the merge sort tree
+
+        size_t temp_memory_size =
+            sycl::ext::oneapi::experimental::default_sorter<>::memory_required<_Tp>(sycl::memory_scope::work_group, __leaf);
+
         sycl::event __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
             oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-            __cgh.parallel_for<_LeafSortName...>(sycl::range</*dim=*/1>(__leaf_steps),
-                                                 [=](sycl::item</*dim=*/1> __item_id) {
-                                                     const _Size __idx = __item_id.get_linear_id() * __leaf;
-                                                     const _Size __start = __idx;
+
+            auto __local_acc = sycl::local_accessor<std::byte, 1>({temp_memory_size}, h);
+            // sycl::accessor<::std::byte, 1, access_mode::discard_read_write, sycl::access::target::local> __local_acc(
+            //                 temp_memory_size, __cgh);
+
+            __cgh.parallel_for<_LeafSortName...>(sycl::nd_range</*dim=*/1>(__leaf_steps * __leaf, __leaf),
+                                                 [=](sycl::nd_item</*dim=*/1> __item_id) {
+                                                     const _Size __start =  __item_id.get_group(0) * __leaf;
                                                      const _Size __end = sycl::min(__start + __leaf, __n);
-                                                     __leaf_sort_kernel()(__rng, __start, __end, __comp);
+
+                                                     const auto group = sycl::ext::oneapi::experimental::group_with_scratchpad(
+                                                         __item_id.get_group(),
+                                                         sycl::span<::std::byte>{__local_acc.get_pointer(), temp_memory_size}
+                                                     );
+                                                     sycl::ext::oneapi::joint_sort(
+                                                         group, __rng.begin() + __start, __rng.begin() + __end, __comp);
+
+                                                    //  __leaf_sort_kernel()(__rng, __start, __end, __comp);
                                                  });
         });
 
