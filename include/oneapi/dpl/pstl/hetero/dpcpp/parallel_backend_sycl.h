@@ -1172,9 +1172,9 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
         sycl::event __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
             oneapi::dpl::__ranges::__require_access(__cgh, __rng);
 
-            auto __local_acc = sycl::local_accessor<std::byte, 1>({temp_memory_size}, h);
-            // sycl::accessor<::std::byte, 1, access_mode::discard_read_write, sycl::access::target::local> __local_acc(
-            //                 temp_memory_size, __cgh);
+            // auto __local_acc = sycl::local_accessor<std::byte, 1>({temp_memory_size}, h);
+            sycl::accessor<::std::byte, 1, access_mode::discard_read_write, sycl::access::target::local> __local_acc(
+                            temp_memory_size, __cgh);
 
             __cgh.parallel_for<_LeafSortName...>(sycl::nd_range</*dim=*/1>(__leaf_steps * __leaf, __leaf),
                                                  [=](sycl::nd_item</*dim=*/1> __item_id) {
