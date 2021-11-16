@@ -856,6 +856,8 @@ __parallel_find(_ExecutionPolicy&& __exec, _Iterator __first, _Iterator __last, 
 //------------------------------------------------------------------------
 // parallel_merge - async pattern
 //-----------------------------------------------------------------------
+
+#if defined(MY_OPT)
 struct __full_merge_kernel
 {
     // this function is needed because it calls in different parallel patterns (parallel_merge, parallel_sort)
@@ -980,6 +982,37 @@ struct __full_merge_kernel
         }
     }
 };
+#else
+struct __full_merge_kernel
+{
+    // this function is needed because it calls in different parallel patterns (parallel_merge, parallel_sort)
+    template <typename _Idx, typename _Acc1, typename _Size1, typename _Acc2, typename _Size2, typename _Acc3,
+              typename _Size3, typename _Compare>
+    void
+    operator()(_Idx __global_idx, const _Acc1& __in_acc1, _Size1 __start_1, _Size1 __end_1, const _Acc2& __in_acc2,
+               _Size2 __start_2, _Size2 __end_2, const _Acc3& __out_acc, _Size3 __out_shift, _Compare __comp) const
+    {
+        // process 1st sequence
+        if (__global_idx >= __start_1 && __global_idx < __end_1)
+        {
+            auto __shift_1 = __global_idx - __start_1;
+            auto __shift_2 =
+                oneapi::dpl::__internal::__pstl_lower_bound(__in_acc2, __start_2, __end_2, __in_acc1[__global_idx], __comp);
+            __shift_2 -= __start_2;
+            __out_acc[__out_shift + __shift_1 + __shift_2] = __in_acc1[__global_idx];
+        }
+        // process 2nd sequence
+        if (__global_idx >= __start_2 && __global_idx < __end_2)
+        {
+            auto __shift_1 =
+                oneapi::dpl::__internal::__pstl_upper_bound(__in_acc1, __start_1, __end_1, __in_acc2[__global_idx], __comp);
+            __shift_1 -= __start_1;
+            auto __shift_2 = __global_idx - __start_2;
+            __out_acc[__out_shift + __shift_1 + __shift_2] = __in_acc2[__global_idx];
+        }
+    }
+};
+#endif // MY_OPT
 
 // Partial merge implementation with O(log(k)) per routine complexity.
 // Note: the routine assumes that the 2nd sequence goes after the first one, meaning that end_1 == start_2.
@@ -1072,8 +1105,9 @@ struct __parallel_merge_submitter<__internal::__optional_kernel_name<_Name...>>
 
         _PRINT_INFO_IN_DEBUG_MODE(__exec);
 
-        const ::std::size_t __chunk = __exec.queue().get_device().is_cpu() ? 128 : 8;
         const auto __max_n = ::std::max(__n, static_cast<decltype(__n)>(__n_2));
+#if defined(MY_OPT)
+        const ::std::size_t __chunk = __exec.queue().get_device().is_cpu() ? 128 : 8;
         const ::std::size_t __steps = ((__max_n - 1) / __chunk) + 1;
 
         auto __event = __exec.queue().submit([&](sycl::handler& __cgh) {
@@ -1083,6 +1117,16 @@ struct __parallel_merge_submitter<__internal::__optional_kernel_name<_Name...>>
                                       decltype(__n_2)(0), __n_2, __rng3, decltype(__n)(0), __comp, __chunk);
             });
         });
+#else // MY_OPT
+        auto __event = __exec.queue().submit([&](sycl::handler& __cgh) {
+            oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2, __rng3);
+            __cgh.parallel_for<_Name...>(__max_n, [=](sycl::item</*dim=*/1> __item_id) {
+                __full_merge_kernel()(__item_id.get_linear_id(), __rng1, decltype(__n)(0), __n, __rng2,
+                                      decltype(__n_2)(0), __n_2, __rng3, decltype(__n)(0), __comp);
+            });
+        });
+#endif // MY_OPT
+
         return __future<void>(__event);
     }
 };
@@ -1148,6 +1192,7 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
 
         _PRINT_INFO_IN_DEBUG_MODE(__exec);
 
+#if defined(MY_OPT)
         // __leaf: size of a block to sort using algorithm suitable for small sequences
         // __optimal_chunk: best size of a block to merge duiring a step of the merge sort algorithm
         // The coefficients were found experimentally
@@ -1261,7 +1306,58 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
                 });
             });
         }
+#else // MY_OPT
+        oneapi::dpl::__par_backend_hetero::__internal::__buffer<_Policy, _Tp> __temp_buf(__exec, __n);
+        auto __temp = __temp_buf.get_buffer();
 
+        _Size __k = 1;
+        bool __data_in_temp = false;
+        sycl::event __event1;
+        do
+        {
+            __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
+                __cgh.depends_on(__event1);
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                auto __temp_acc = __temp.template get_access<__par_backend_hetero::access_mode::read_write>(__cgh);
+                __cgh.parallel_for<_GlobalSortName...>(sycl::range</*dim=*/1>(__n),
+                                                    [=](sycl::item</*dim=*/1> __item_id) {
+                                                        auto __global_idx = __item_id.get_linear_id();
+
+                                                        _Size __start = 2 * __k * (__global_idx / (2 * __k));
+                                                        _Size __end_1 = sycl::min(__start + __k, __n);
+                                                        _Size __end_2 = sycl::min(__start + 2 * __k, __n);
+
+                                                        if (!__data_in_temp)
+                                                        {
+                                                            __merge(__global_idx, __rng, __start, __end_1, __rng, __end_1,
+                                                                    __end_2, __temp_acc, __start, __comp);
+                                                        }
+                                                        else
+                                                        {
+                                                            __merge(__global_idx, __temp_acc, __start, __end_1,
+                                                                    __temp_acc, __end_1, __end_2, __rng, __start, __comp);
+                                                        }
+                                                    });
+            });
+            __data_in_temp = !__data_in_temp;
+            __k *= 2;
+        } while (__k < __n);
+
+        // if results are in temporary buffer then copy back those
+        if (__data_in_temp)
+        {
+            __exec.queue().submit([&](sycl::handler& __cgh) {
+                __cgh.depends_on(__event1);
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                auto __temp_acc = __temp.template get_access<__par_backend_hetero::access_mode::read_write>(__cgh);
+                // we cannot use __cgh.copy here because of zip_iterator usage
+                __cgh.parallel_for<_CopyBackName...>(sycl::range</*dim=*/1>(__n),
+                                                    [=](sycl::item</*dim=*/1> __item_id) {
+                                                        __rng[__item_id.get_linear_id()] = __temp_acc[__item_id];
+                                                    });
+            });
+        }
+#endif
         return __future<void>(__event1, __temp);
     }
 };
