@@ -87,4 +87,16 @@
 #endif
 #endif //!defined(_ENABLE_RANGES_TESTING)
 
+// Check for C++ standard and standard library for the use of inclusive_scan / exclusive_scan from Numeric API
+#if !defined(_HAS_INCLUSIVE_EXCLUSIVE_SCAN_IMPL)
+#define _INCLUSIVE_EXCLUSIVE_SCAN_IMPL_FOR_CPP_17_ONLY (__cplusplus >= 201703L)
+#if defined(_GLIBCXX_RELEASE)
+#    define _HAS_INCLUSIVE_EXCLUSIVE_SCAN_IMPL (_INCLUSIVE_EXCLUSIVE_SCAN_IMPL_FOR_CPP_17_ONLY && _GLIBCXX_RELEASE >= 11 && __GLIBCXX__ >= 20210427)
+#elif defined(_LIBCPP_VERSION)
+#    define _HAS_INCLUSIVE_EXCLUSIVE_SCAN_IMPL (_INCLUSIVE_EXCLUSIVE_SCAN_IMPL_FOR_CPP_17_ONLY && _LIBCPP_VERSION >= 7000)
+#else
+#    define _HAS_INCLUSIVE_EXCLUSIVE_SCAN_IMPL (_INCLUSIVE_EXCLUSIVE_SCAN_IMPL_FOR_CPP_17_ONLY)
+#endif
+#endif // !defined(_HAS_INCLUSIVE_EXCLUSIVE_SCAN_IMPL)
+
 #endif /* _TEST_config_H */
