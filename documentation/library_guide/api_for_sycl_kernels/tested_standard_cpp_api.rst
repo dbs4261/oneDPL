@@ -239,6 +239,14 @@ C++ Standard API                     libstdc++  libc++     MSVC
 ------------------------------------ ---------- ---------- ----------
 ``std::complex``                     Tested     Tested     Tested
 ------------------------------------ ---------- ---------- ----------
+``std::arg``                         Tested     Tested     Tested
+------------------------------------ ---------- ---------- ----------
+``std::conj``                        Tested     Tested     Tested
+------------------------------------ ---------- ---------- ----------
+``std::imag``                        Tested     Tested     Tested
+------------------------------------ ---------- ---------- ----------
+``std::real``                        Tested     Tested     Tested
+------------------------------------ ---------- ---------- ----------
 ``std::assert``                      Tested     Tested     Tested
 ------------------------------------ ---------- ---------- ----------
 ``std::sin``                         Tested     Tested     Tested
@@ -360,14 +368,6 @@ C++ Standard API                     libstdc++  libc++     MSVC
 ``std::move_backward``               Tested     Tested     Tested
 ------------------------------------ ---------- ---------- ----------
 ``std::abs``                         Tested     Tested     Tested
------------------------------------- ---------- ---------- ----------
-``std::arg``                         Tested     Tested     Tested
------------------------------------- ---------- ---------- ----------
-``std::conj``                        Tested     Tested     Tested
------------------------------------- ---------- ---------- ----------
-``std::imag``                        Tested     Tested     Tested
------------------------------------- ---------- ---------- ----------
-``std::real``                        Tested     Tested     Tested
 ==================================== ========== ========== ==========
 
 These tests were done for the following versions of the standard C++ library:
