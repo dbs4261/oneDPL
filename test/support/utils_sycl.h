@@ -20,14 +20,7 @@
 // Do not #include <algorithm>, because if we do we will not detect accidental dependencies.
 
 #include <iterator>
-#include "oneapi/dpl/pstl/hetero/dpcpp/sycl_defs.h"
-#if _ONEDPL_FPGA_DEVICE
-#    if __LIBSYCL_VERSION >= 50400
-#        include <sycl/ext/intel/fpga_extensions.hpp>
-#    else
-#        include <CL/sycl/INTEL/fpga_extensions.hpp>
-#    endif
-#endif
+#include "utils_sycl_defs.h"
 
 #include "test_config.h"
 
