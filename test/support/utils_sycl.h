@@ -100,9 +100,9 @@ make_new_policy(_Policy&& __policy)
 #if ONEDPL_FPGA_DEVICE
     auto default_selector =
 #    if ONEDPL_FPGA_EMULATOR
-        __dpl_sycl::__fpga_emulator_selector{};
+        __fpga_emulator_selector{};
 #    else
-        __dpl_sycl::__fpga_selector{};
+        __fpga_selector{};
 #    endif // ONEDPL_FPGA_EMULATOR
 
     auto&& default_dpcpp_policy =
