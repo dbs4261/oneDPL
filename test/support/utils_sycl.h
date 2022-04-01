@@ -158,9 +158,20 @@ test1buffer()
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test1buffers function (USM) : " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 #endif
@@ -178,9 +189,20 @@ test1buffer()
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test1buffers function (Buffer) : " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 }
@@ -208,10 +230,21 @@ test2buffers()
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               inout2_offset_first, inout2_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   inout2_offset_first, inout2_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test2buffers function (USM) : " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 #endif
@@ -231,10 +264,21 @@ test2buffers()
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               inout2_offset_first, inout2_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   inout2_offset_first, inout2_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test2buffers function (Buffer) : " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 }
@@ -265,11 +309,22 @@ test3buffers(int mult = kDefaultMultValue)
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               inout2_offset_first, inout2_offset_first + n,
-                                               inout3_offset_first, inout3_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<0>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   inout2_offset_first, inout2_offset_first + n,
+                                                   inout3_offset_first, inout3_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test3buffers function (USM) : " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 #endif
@@ -291,11 +346,22 @@ test3buffers(int mult = kDefaultMultValue)
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
-                                               inout1_offset_first, inout1_offset_first + n,
-                                               inout2_offset_first, inout2_offset_first + n,
-                                               inout3_offset_first, inout3_offset_first + n,
-                                               n);
+            try
+            {
+                invoke_on_all_hetero_policies<1>()(create_test_obj<TestValueType, TestName>(test_base_data),
+                                                   inout1_offset_first, inout1_offset_first + n,
+                                                   inout2_offset_first, inout2_offset_first + n,
+                                                   inout3_offset_first, inout3_offset_first + n,
+                                                   n);
+            }
+            catch (const std::exception& exc)
+            {
+                ::std::cout << "Exception occurred in test3buffers function (Buffer): " << exc.what() << std::endl;
+                ::std::cout << "    Test name: " << TestName::name() << std::endl;
+                ::std::cout << "    n = " << n << ::std::endl;
+
+                throw;
+            }
         }
     }
 }
