@@ -124,7 +124,7 @@ DEFINE_TEST(test_uninitialized_copy)
         ::std::uninitialized_copy(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n, value), "wrong effect from uninitialized_copy");
     }
@@ -151,7 +151,7 @@ DEFINE_TEST(test_uninitialized_copy_n)
         ::std::uninitialized_copy_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, first2);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n, value), "wrong effect from uninitialized_copy_n");
     }
@@ -177,7 +177,7 @@ DEFINE_TEST(test_uninitialized_move)
         ::std::uninitialized_move(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n, value), "wrong effect from uninitialized_move");
     }
@@ -204,7 +204,7 @@ DEFINE_TEST(test_uninitialized_move_n)
         ::std::uninitialized_move_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, first2);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n, value),
                     "wrong effect from uninitialized_move_n");
@@ -229,7 +229,7 @@ DEFINE_TEST(test_uninitialized_fill)
 
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2),
                                  value),
@@ -253,7 +253,7 @@ DEFINE_TEST(test_uninitialized_fill_n)
         ::std::uninitialized_fill_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, value + 1);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, value + 1),
                     "wrong effect from uninitialized_fill_n");
@@ -281,7 +281,7 @@ DEFINE_TEST(test_uninitialized_default_construct)
                                              first1 + (n / 3), first1 + (n / 2));
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2), exp_value),
                     "wrong effect from uninitialized_default_construct");
@@ -308,7 +308,7 @@ DEFINE_TEST(test_uninitialized_default_construct_n)
         ::std::uninitialized_default_construct_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, exp_value),
                     "wrong effect from uninitialized_default_construct_n");
@@ -334,7 +334,7 @@ DEFINE_TEST(test_uninitialized_value_construct)
                                            first1 + (n / 3), first1 + (n / 2));
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2), T1{}),
                     "wrong effect from uninitialized_value_construct");
@@ -360,7 +360,7 @@ DEFINE_TEST(test_uninitialized_value_construct_n)
         ::std::uninitialized_value_construct_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, T1{}),
                     "wrong effect from uninitialized_value_construct_n");
@@ -388,7 +388,7 @@ DEFINE_TEST(test_destroy)
             value = T1{-2};
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2), value),
                     "wrong effect from destroy");
@@ -416,7 +416,7 @@ DEFINE_TEST(test_destroy_n)
             value = T1{-2};
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, value),
                     "wrong effect from destroy_n");
@@ -439,7 +439,7 @@ DEFINE_TEST(test_fill)
         ::std::fill(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1 + (n / 3), first1 + (n / 2), value);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2), value), "wrong effect from fill");
     }
@@ -461,7 +461,7 @@ DEFINE_TEST(test_fill_n)
         ::std::fill_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, value + 1);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, value + 1), "wrong effect from fill_n");
     }
@@ -484,7 +484,7 @@ DEFINE_TEST(test_generate)
                       Generator_count<T1>(value));
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get() + (n / 3), host_keys.get() + (n / 2), value),
                     "wrong effect from generate");
@@ -507,7 +507,7 @@ DEFINE_TEST(test_generate_n)
         ::std::generate_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, Generator_count<T1>(value + 1));
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, value + 1),
                     "wrong effect from generate_n");
@@ -534,7 +534,7 @@ DEFINE_TEST(test_for_each)
         ::std::for_each(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1 + (n / 3), first1 + (n / 2), Inc());
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         // We call due to SYCL 1.2.1: 4.7.2.3.
         // If the host memory is modified by the host,
         // or mapped to another buffer or image during the lifetime of this buffer,
@@ -563,7 +563,7 @@ DEFINE_TEST(test_for_each_n)
         ::std::for_each_n(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, n, Inc());
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_keys.retrieve_data();
         EXPECT_TRUE(check_values(host_keys.get(), host_keys.get() + n, value + 1),
                     "wrong effect from for_each_n");
@@ -591,7 +591,7 @@ DEFINE_TEST(test_transform_unary)
         ::std::transform(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1 + n / 2, last1, first2 + n / 2, Flip(7));
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
 
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n / 2, value + 1),
@@ -621,7 +621,7 @@ DEFINE_TEST(test_transform_binary)
         ::std::transform(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first1, first2, Plus());
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
-#endif
+#endif // _PSTL_SYCL_TEST_USM
         host_vals.retrieve_data();
         EXPECT_TRUE(check_values(host_vals.get(), host_vals.get() + n, T1(6)),
                     "wrong effect from transform_binary");
@@ -681,7 +681,7 @@ test_usm_and_buffer()
     PRINT_DEBUG("test_uninitialized_move_n");
     test2buffers<alloc_type, test_uninitialized_move_n<ValueType>>();
 }
-#endif
+#endif // TEST_DPCPP_BACKEND_PRESENT
 
 std::int32_t
 main()
