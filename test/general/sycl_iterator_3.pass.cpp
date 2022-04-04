@@ -769,11 +769,11 @@ int b[] = {0, 1, 1, 6, 6, 9};
 int c[] = {0, 1, 6, 6, 6, 9, 9};
 int d[] = {7, 7, 7, 8};
 int e[] = {11, 11, 12, 16, 19};
-constexpr size_t na = sizeof(a) / sizeof(a[0]);
-constexpr size_t nb = sizeof(b) / sizeof(b[0]);
-constexpr size_t nc = sizeof(c) / sizeof(c[0]);
-constexpr size_t nd = sizeof(d) / sizeof(d[0]);
-constexpr size_t full_size = na + nb + nc + nd;
+constexpr size_t count_a = sizeof(a) / sizeof(a[0]);
+constexpr size_t count_b = sizeof(b) / sizeof(b[0]);
+constexpr size_t count_c = sizeof(c) / sizeof(c[0]);
+constexpr size_t count_d = sizeof(d) / sizeof(d[0]);
+constexpr size_t count_abcd = count_a + count_b + count_c + count_d;
 
 
 DEFINE_TEST(test_includes)
@@ -784,20 +784,20 @@ DEFINE_TEST(test_includes)
     void
     operator()(Policy&& exec, Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2, Size n)
     {
-        if (n < full_size)
+        if (n < count_abcd)
             return;
 
         TestDataTransfer<UDTKind::eKeys, Size> host_keys(*this, n);
         TestDataTransfer<UDTKind::eVals, Size> host_vals(*this, n);
 
         //first test case
-        last1 = first1 + na;
-        last2 = first2 + nb;
+        last1 = first1 + count_a;
+        last2 = first2 + count_b;
 
-        ::std::copy(a, a + na, host_keys.get());
-        ::std::copy(b, b + nb, host_vals.get());
-        host_keys.update_data(na);
-        host_vals.update_data(nb);
+        ::std::copy(a, a + count_a, host_keys.get());
+        ::std::copy(b, b + count_b, host_vals.get());
+        host_keys.update_data(count_a);
+        host_vals.update_data(count_b);
 
         auto result = ::std::includes(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2, last2);
 #if _PSTL_SYCL_TEST_USM
@@ -806,8 +806,8 @@ DEFINE_TEST(test_includes)
         EXPECT_TRUE(result, "wrong effect from includes a, b");
 
         host_vals.retrieve_data();
-        ::std::copy(c, c + nc, host_vals.get());
-        host_vals.update_data(nc);
+        ::std::copy(c, c + count_c, host_vals.get());
+        host_vals.update_data(count_c);
 
         result = ::std::includes(make_new_policy<new_kernel_name<Policy, 1>>(exec), first1, last1, first2, last2);
 #if _PSTL_SYCL_TEST_USM
@@ -827,7 +827,7 @@ DEFINE_TEST(test_set_intersection)
     operator()(Policy&& exec, Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2, Iterator3 first3,
                Iterator3 last3, Size n)
     {
-        if (n < full_size)
+        if (n < count_abcd)
             return;
 
         TestDataTransfer<UDTKind::eKeys, Size> host_keys(*this, n);
@@ -835,12 +835,12 @@ DEFINE_TEST(test_set_intersection)
         TestDataTransfer<UDTKind::eRes,  Size> host_res (*this, n);
 
         //first test case
-        last1 = first1 + na;
-        last2 = first2 + nb;
-        ::std::copy(a, a + na, host_keys.get());
-        ::std::copy(b, b + nb, host_vals.get());
-        host_keys.update_data(na);
-        host_vals.update_data(nb);
+        last1 = first1 + count_a;
+        last2 = first2 + count_b;
+        ::std::copy(a, a + count_a, host_keys.get());
+        ::std::copy(b, b + count_b, host_vals.get());
+        host_keys.update_data(count_a);
+        host_vals.update_data(count_b);
 
         last3 = ::std::set_intersection(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2, last2,
                                       first3);
@@ -852,8 +852,8 @@ DEFINE_TEST(test_set_intersection)
 
         EXPECT_TRUE(nres == 6, "wrong size of intersection of a, b");
 
-        auto result = ::std::includes(host_keys.get(), host_keys.get() + na, host_res.get(), host_res.get() + nres) &&
-                      ::std::includes(host_vals.get(), host_vals.get() + nb, host_res.get(), host_res.get() + nres);
+        auto result = ::std::includes(host_keys.get(), host_keys.get() + count_a, host_res.get(), host_res.get() + nres) &&
+                      ::std::includes(host_vals.get(), host_vals.get() + count_b, host_res.get(), host_res.get() + nres);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
 #endif
@@ -861,11 +861,11 @@ DEFINE_TEST(test_set_intersection)
 
         { //second test case
 
-            last2 = first2 + nd;
-            ::std::copy(a, a + na, host_keys.get());
-            ::std::copy(d, d + nd, host_vals.get());
-            host_keys.update_data(na);
-            host_vals.update_data(nb);
+            last2 = first2 + count_d;
+            ::std::copy(a, a + count_a, host_keys.get());
+            ::std::copy(d, d + count_d, host_vals.get());
+            host_keys.update_data(count_a);
+            host_vals.update_data(count_b);
 
             last3 = ::std::set_intersection(make_new_policy<new_kernel_name<Policy, 1>>(exec), first1, last1, first2,
                                           last2, first3);
@@ -887,28 +887,28 @@ DEFINE_TEST(test_set_difference)
     operator()(Policy&& exec, Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2, Iterator3 first3,
                Iterator3 last3, Size n)
     {
-        if (n < full_size)
+        if (n < count_abcd)
             return;
 
         TestDataTransfer<UDTKind::eKeys, Size> host_keys(*this, n);
         TestDataTransfer<UDTKind::eVals, Size> host_vals(*this, n);
         TestDataTransfer<UDTKind::eRes,  Size> host_res (*this, n);
 
-        last1 = first1 + na;
-        last2 = first2 + nb;
+        last1 = first1 + count_a;
+        last2 = first2 + count_b;
 
-        ::std::copy(a, a + na, host_keys.get());
-        ::std::copy(b, b + nb, host_vals.get());
-        host_keys.update_data(na);
-        host_vals.update_data(nb);
+        ::std::copy(a, a + count_a, host_keys.get());
+        ::std::copy(b, b + count_b, host_vals.get());
+        host_keys.update_data(count_a);
+        host_vals.update_data(count_b);
 
         last3 = ::std::set_difference(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2, last2, first3);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
 #endif
-        int res_expect[na];
+        int res_expect[count_a];
         host_res.retrieve_data();
-        auto nres_expect = ::std::set_difference(host_keys.get(), host_keys.get() + na, host_vals.get(), host_vals.get() + nb, res_expect) - res_expect;
+        auto nres_expect = ::std::set_difference(host_keys.get(), host_keys.get() + count_a, host_vals.get(), host_vals.get() + count_b, res_expect) - res_expect;
         EXPECT_EQ_N(host_res.get(), res_expect, nres_expect, "wrong effect from set_difference a, b");
     }
 };
@@ -922,29 +922,29 @@ DEFINE_TEST(test_set_union)
     operator()(Policy&& exec, Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2, Iterator3 first3,
                Iterator3 last3, Size n)
     {
-        if (n < full_size)
+        if (n < count_abcd)
             return;
 
         TestDataTransfer<UDTKind::eKeys, Size> host_keys(*this, n);
         TestDataTransfer<UDTKind::eVals, Size> host_vals(*this, n);
         TestDataTransfer<UDTKind::eRes,  Size> host_res (*this, n);
 
-        last1 = first1 + na;
-        last2 = first2 + nb;
+        last1 = first1 + count_a;
+        last2 = first2 + count_b;
 
-        ::std::copy(a, a + na, host_keys.get());
-        ::std::copy(b, b + nb, host_vals.get());
-        host_keys.update_data(na);
-        host_vals.update_data(nb);
+        ::std::copy(a, a + count_a, host_keys.get());
+        ::std::copy(b, b + count_b, host_vals.get());
+        host_keys.update_data(count_a);
+        host_vals.update_data(count_b);
 
         last3 = ::std::set_union(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1, first2, last2, first3);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
 #endif
-        int res_expect[na + nb];
+        int res_expect[count_a + count_b];
         host_res.retrieve_data();
         auto nres_expect =
-            ::std::set_union(host_keys.get(), host_keys.get() + na, host_vals.get(), host_vals.get() + nb, res_expect) - res_expect;
+            ::std::set_union(host_keys.get(), host_keys.get() + count_a, host_vals.get(), host_vals.get() + count_b, res_expect) - res_expect;
         EXPECT_EQ_N(host_res.get(), res_expect, nres_expect, "wrong effect from set_union a, b");
     }
 };
@@ -958,30 +958,30 @@ DEFINE_TEST(test_set_symmetric_difference)
     operator()(Policy&& exec, Iterator1 first1, Iterator1 last1, Iterator2 first2, Iterator2 last2, Iterator3 first3,
                Iterator3 last3, Size n)
     {
-        if (n < full_size)
+        if (n < count_abcd)
             return;
 
         TestDataTransfer<UDTKind::eKeys, Size> host_keys(*this, n);
         TestDataTransfer<UDTKind::eVals, Size> host_vals(*this, n);
         TestDataTransfer<UDTKind::eRes, Size>  host_res (*this, n);
 
-        last1 = first1 + na;
-        last2 = first2 + nb;
+        last1 = first1 + count_a;
+        last2 = first2 + count_b;
 
-        ::std::copy(a, a + na, host_keys.get());
-        ::std::copy(b, b + nb, host_vals.get());
-        host_keys.update_data(na);
-        host_vals.update_data(nb);
+        ::std::copy(a, a + count_a, host_keys.get());
+        ::std::copy(b, b + count_b, host_vals.get());
+        host_keys.update_data(count_a);
+        host_vals.update_data(count_b);
 
         last3 = ::std::set_symmetric_difference(make_new_policy<new_kernel_name<Policy, 0>>(exec), first1, last1,
                                                 first2, last2, first3);
 #if _PSTL_SYCL_TEST_USM
         exec.queue().wait_and_throw();
 #endif
-        int res_expect[na + nb];
+        int res_expect[count_a + count_b];
         retrieve_data(host_keys, host_vals, host_res);
-        auto nres_expect = ::std::set_symmetric_difference(host_keys.get(), host_keys.get() + na, host_vals.get(),
-                                                           host_vals.get() + nb, res_expect) -
+        auto nres_expect = ::std::set_symmetric_difference(host_keys.get(), host_keys.get() + count_a, host_vals.get(),
+                                                           host_vals.get() + count_b, res_expect) -
                            res_expect;
         EXPECT_EQ_N(host_res.get(), res_expect, nres_expect, "wrong effect from set_symmetric_difference a, b");
     }
