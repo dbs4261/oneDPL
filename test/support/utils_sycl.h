@@ -158,13 +158,14 @@ test1buffer()
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_test<TestName>("test1buffers (USM)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<0>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test1buffers (USM)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<0>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 #endif
@@ -182,13 +183,14 @@ test1buffer()
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_test<TestName>("test1buffers (Buffer)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<1>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test1buffers (Buffer)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<1>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 }
@@ -216,13 +218,14 @@ test2buffers()
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_test<TestName>("test2buffers (USM)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<0>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test2buffers (USM)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<0>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 #endif
@@ -242,13 +245,14 @@ test2buffers()
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_test<TestName>("test2buffers (Buffer)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<1>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test2buffers (Buffer)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<1>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 }
@@ -279,14 +283,15 @@ test3buffers(int mult = kDefaultMultValue)
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #    endif
-            invoke_test<TestName>("test3buffers (USM)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<0>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n,
-                                          inout3_offset_first, inout3_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test3buffers (USM)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<0>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n,
+                                               inout3_offset_first, inout3_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 #endif
@@ -308,14 +313,15 @@ test3buffers(int mult = kDefaultMultValue)
 #if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
 #endif
-            invoke_test<TestName>("test3buffers (Buffer)", n,
-                                  [&]()
-                                  {
-                                      invoke_on_all_hetero_policies<1>()(
-                                          create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
-                                          inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n,
-                                          inout3_offset_first, inout3_offset_first + n, n);
-                                  });
+            if (!invoke_test<TestName>("test3buffers (Buffer)", n,
+                                       [&]()
+                                       {
+                                           invoke_on_all_hetero_policies<1>()(
+                                               create_test_obj<TestValueType, TestName>(test_base_data), inout1_offset_first,
+                                               inout1_offset_first + n, inout2_offset_first, inout2_offset_first + n,
+                                               inout3_offset_first, inout3_offset_first + n, n);
+                                       }))
+                break;
         }
     }
 }
