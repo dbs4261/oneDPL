@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #if TEST_DPCPP_BACKEND_PRESENT
 #include <CL/sycl.hpp>
@@ -29,8 +30,7 @@ constexpr sycl::access::mode sycl_read = sycl::access::mode::read;
 constexpr sycl::access::mode sycl_write = sycl::access::mode::write;
 
 template <typename KernelClass, typename Function, typename ValueType>
-void
-test_impl(cl::sycl::queue deviceQueue, Function fnc, const std::vector<ValueType>& args, const char* message)
+struct TestImpl
 {
     const auto args_count = args.size();
 
@@ -82,7 +82,8 @@ test(cl::sycl::queue deviceQueue, Function fnc, const std::vector<ValueType>& ar
 {
     if (TestUtils::has_type_support<ValueType>(deviceQueue.get_device()))
     {
-        test_impl<KernelClass, Function, ValueType>(deviceQueue, fnc, args, message);
+        auto test_obj = ::std::make_unique<TestImpl<KernelClass, Function, ValueType> >();
+        (*test_obj)(deviceQueue, fnc, args, message);
     }
     else
     {
@@ -127,12 +128,9 @@ main()
 
     ////////////////////////////////////////////////////////
     // long double nearbyintl(long double arg);
-    if (deviceQueue.get_device().has(sycl::aspect::fp64))
-    {
-        const std::vector<long double> f_args_ld = {+2.3, +2.5, +3.5, -2.3, -2.5, -3.5};
-        auto f_nearbyintl_ld = [](long double arg) -> long double { return oneapi::dpl::nearbyintl(arg); };
-        test<TestUtils::unique_kernel_name<Test, 11>>(deviceQueue, f_nearbyintl_ld, f_args_ld, "long double nearbyintl(long double)");
-    }
+    const std::vector<long double> f_args_ld = {+2.3, +2.5, +3.5, -2.3, -2.5, -3.5};
+    auto f_nearbyintl_ld = [](long double arg) -> long double { return oneapi::dpl::nearbyintl(arg); };
+    test<TestUtils::unique_kernel_name<Test, 11>>(deviceQueue, f_nearbyintl_ld, f_args_ld, "long double nearbyintl(long double)");
 
 #endif // TEST_DPCPP_BACKEND_PRESENT
 
