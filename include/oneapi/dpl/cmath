@@ -73,6 +73,7 @@ using ::std::nan;
 using ::std::nanf;
 using ::std::nearbyint;
 using ::std::nearbyintf;
+using ::std::nearbyintl;
 using ::std::nextafter;
 using ::std::pow;
 using ::std::remainder;
