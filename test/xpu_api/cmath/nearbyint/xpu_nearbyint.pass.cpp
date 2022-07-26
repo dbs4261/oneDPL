@@ -126,12 +126,6 @@ main()
     const std::vector<double> f_args_double = {+2.3, +2.5, +3.5, -2.3, -2.5, -3.5};
     test<TestUtils::unique_kernel_name<Test, 2>>(deviceQueue, f_nearbyint_double, f_args_double, "double nearbyint(double)");
 
-    ////////////////////////////////////////////////////////
-    // long double nearbyintl(long double arg);
-    const std::vector<long double> f_args_ld = {+2.3, +2.5, +3.5, -2.3, -2.5, -3.5};
-    auto f_nearbyintl_ld = [](long double arg) -> long double { return oneapi::dpl::nearbyintl(arg); };
-    test<TestUtils::unique_kernel_name<Test, 11>>(deviceQueue, f_nearbyintl_ld, f_args_ld, "long double nearbyintl(long double)");
-
 #endif // TEST_DPCPP_BACKEND_PRESENT
 
     return TestUtils::done(TEST_DPCPP_BACKEND_PRESENT);
