@@ -21,13 +21,10 @@
 
 #include <CL/sycl.hpp>
 
-#include <oneapi/tbb/global_control.h>
 int
 main(int argc, char* argv[])
 {
     int size = 10;
-
-    oneapi::tbb::global_control limit(oneapi::tbb::global_control::max_allowed_parallelism, 1);
 
     auto sycl_asynchandler = [](sycl::exception_list exceptions)
     {
@@ -46,7 +43,6 @@ main(int argc, char* argv[])
     };
 
     sycl::device* sycl_device = new sycl::device(sycl::gpu_selector{});
-    //sycl::device* sycl_device = new sycl::device(sycl::default_selector{});
     sycl::context sycl_ctxt = sycl::context(*sycl_device, sycl_asynchandler);
     sycl::queue q(sycl_ctxt, *sycl_device, sycl::property_list{sycl::property::queue::in_order{}});
 
