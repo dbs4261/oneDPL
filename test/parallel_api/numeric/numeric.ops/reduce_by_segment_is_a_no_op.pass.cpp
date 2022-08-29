@@ -45,8 +45,8 @@ main(int argc, char* argv[])
         }
     };
 
-    //sycl::device* sycl_device = new sycl::device(sycl::gpu_selector{});
-    sycl::device* sycl_device = new sycl::device(sycl::default_selector{});
+    sycl::device* sycl_device = new sycl::device(sycl::gpu_selector{});
+    //sycl::device* sycl_device = new sycl::device(sycl::default_selector{});
     sycl::context sycl_ctxt = sycl::context(*sycl_device, sycl_asynchandler);
     sycl::queue q(sycl_ctxt, *sycl_device, sycl::property_list{sycl::property::queue::in_order{}});
 
