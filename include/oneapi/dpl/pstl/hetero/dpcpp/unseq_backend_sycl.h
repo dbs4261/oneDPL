@@ -963,8 +963,8 @@ struct __brick_reduce_idx
     operator()(const _ItemId __idx, const _ReduceIdx& __segment_ends, const _Values& __values,
                _OutValues& __out_values) const
     {
-        using __value_type = decltype(__segment_ends[__idx]);
-        __value_type __segment_begin = (__idx == 0) ? __value_type(0) : __segment_ends[__idx - 1];
+        using __index_type = decltype(__segment_ends[__idx]);
+        __index_type __segment_begin = (__idx == 0) ? __index_type(0) : __segment_ends[__idx - 1];
         __out_values[__idx] = reduce(__segment_begin, __segment_ends[__idx], __values);
     }
 
