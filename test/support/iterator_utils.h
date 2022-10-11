@@ -18,6 +18,8 @@
 
 #include "test_config.h"
 
+#include _PSTL_TEST_HEADER(utility)
+
 // File contains common utilities for testing with different types of iterators
 namespace TestUtils
 {
@@ -247,7 +249,7 @@ struct invoke_if_
     operator()(bool is_allow, Op op, Rest&&... rest)
     {
         if (is_allow)
-            op(::std::forward<Rest>(rest)...);
+            op(dpl::forward<Rest>(rest)...);
     }
 };
 template <>
@@ -257,7 +259,7 @@ struct invoke_if_<::std::false_type, ::std::false_type>
     void
     operator()(bool /*is_allow*/, Op op, Rest&&... rest)
     {
-        op(::std::forward<Rest>(rest)...);
+        op(dpl::forward<Rest>(rest)...);
     }
 };
 
@@ -336,7 +338,7 @@ struct iterator_invoker
                             void>::type
     operator()(Policy&& exec, Op op, Iterator iter)
     {
-        op(::std::forward<Policy>(exec), make_iterator<Iterator>()(iter));
+        op(dpl::forward<Policy>(exec), make_iterator<Iterator>()(iter));
     }
 
     // A version with 2 iterators which is used for non_const testcases
@@ -346,7 +348,7 @@ struct iterator_invoker
                             void>::type
     operator()(Policy&& exec, Op op, InputIterator input_iter, OutputIterator out_iter)
     {
-        op(::std::forward<Policy>(exec), make_iterator<InputIterator>()(input_iter),
+        op(dpl::forward<Policy>(exec), make_iterator<InputIterator>()(input_iter),
            make_iterator<OutputIterator>()(out_iter));
     }
 
@@ -356,7 +358,7 @@ struct iterator_invoker
     operator()(Policy&& exec, Op op, Iterator begin, typename ::std::iterator_traits<Iterator>::difference_type n,
         Iterator expected, Rest&&... rest)
     {
-        op(exec, make_iterator<Iterator>()(begin), n, make_iterator<Iterator>()(expected), ::std::forward<Rest>(rest)...);
+        op(exec, make_iterator<Iterator>()(begin), n, make_iterator<Iterator>()(expected), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename Iterator, typename... Rest>
@@ -364,7 +366,7 @@ struct iterator_invoker
     operator()(Policy&& exec, Op op, Iterator begin, typename ::std::iterator_traits<Iterator>::difference_type n, Rest&&... rest)
     {
         invoke_if<Iterator>()(n <= sizeLimit, op, exec, make_iterator<Iterator>()(begin), n,
-                              ::std::forward<Rest>(rest)...);
+                              dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename Iterator, typename... Rest>
@@ -375,7 +377,7 @@ struct iterator_invoker
     {
         invoke_if<Iterator>()(::std::distance(inputBegin, inputEnd) <= sizeLimit, op, exec,
                               make_iterator<Iterator>()(inputBegin), make_iterator<Iterator>()(inputEnd),
-                              ::std::forward<Rest>(rest)...);
+                              dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator, typename OutputIterator, typename... Rest>
@@ -386,7 +388,7 @@ struct iterator_invoker
     {
         invoke_if<InputIterator>()(::std::distance(inputBegin, inputEnd) <= sizeLimit, op, exec,
                                    make_iterator<InputIterator>()(inputBegin), make_iterator<InputIterator>()(inputEnd),
-                                   make_iterator<OutputIterator>()(outputBegin), ::std::forward<Rest>(rest)...);
+                                   make_iterator<OutputIterator>()(outputBegin), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator, typename OutputIterator, typename... Rest>
@@ -398,7 +400,7 @@ struct iterator_invoker
         invoke_if<InputIterator>()(::std::distance(inputBegin, inputEnd) <= sizeLimit, op, exec,
                                    make_iterator<InputIterator>()(inputBegin), make_iterator<InputIterator>()(inputEnd),
                                    make_iterator<OutputIterator>()(outputBegin),
-                                   make_iterator<OutputIterator>()(outputEnd), ::std::forward<Rest>(rest)...);
+                                   make_iterator<OutputIterator>()(outputEnd), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator1, typename InputIterator2, typename OutputIterator,
@@ -412,7 +414,7 @@ struct iterator_invoker
             ::std::distance(inputBegin1, inputEnd1) <= sizeLimit, op, exec, make_iterator<InputIterator1>()(inputBegin1),
             make_iterator<InputIterator1>()(inputEnd1), make_iterator<InputIterator2>()(inputBegin2),
             make_iterator<InputIterator2>()(inputEnd2), make_iterator<OutputIterator>()(outputBegin),
-            make_iterator<OutputIterator>()(outputEnd), ::std::forward<Rest>(rest)...);
+            make_iterator<OutputIterator>()(outputEnd), dpl::forward<Rest>(rest)...);
     }
 };
 
@@ -432,7 +434,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
                             void>::type
     operator()(Policy&& exec, Op op, Iterator iter)
     {
-        op(::std::forward<Policy>(exec), make_iterator<Iterator>()(iter));
+        op(dpl::forward<Policy>(exec), make_iterator<Iterator>()(iter));
     }
 
     // A version with 2 iterators which is used for non_const testcases
@@ -442,7 +444,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
                             void>::type
     operator()(Policy&& exec, Op op, InputIterator input_iter, OutputIterator out_iter)
     {
-        op(::std::forward<Policy>(exec), make_iterator<InputIterator>()(input_iter),
+        op(dpl::forward<Policy>(exec), make_iterator<InputIterator>()(input_iter),
            make_iterator<OutputIterator>()(out_iter));
     }
 
@@ -451,7 +453,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
     operator()(Policy&& exec, Op op, Iterator begin, typename ::std::iterator_traits<Iterator>::difference_type n, Rest&&... rest)
     {
         if (n <= sizeLimit)
-            op(exec, make_iterator<Iterator>()(begin + n), n, ::std::forward<Rest>(rest)...);
+            op(exec, make_iterator<Iterator>()(begin + n), n, dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename Iterator, typename... Rest>
@@ -460,7 +462,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
         Rest&&... rest)
     {
         if (n <= sizeLimit)
-            op(exec, make_iterator<Iterator>()(begin + n), n, make_iterator<Iterator>()(expected + n), ::std::forward<Rest>(rest)...);
+            op(exec, make_iterator<Iterator>()(begin + n), n, make_iterator<Iterator>()(expected + n), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename Iterator, typename... Rest>
@@ -468,7 +470,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
     operator()(Policy&& exec, Op op, Iterator begin, typename ::std::iterator_traits<Iterator>::difference_type n, Iterator expected, Rest&&... rest)
     {
         if (n <= sizeLimit)
-            op(exec, make_iterator<Iterator>()(std::next(begin, n)), n, make_iterator<Iterator>()(std::next(expected, n)), ::std::forward<Rest>(rest)...);
+            op(exec, make_iterator<Iterator>()(std::next(begin, n)), n, make_iterator<Iterator>()(std::next(expected, n)), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename Iterator, typename... Rest>
@@ -479,7 +481,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
     {
         if (::std::distance(inputBegin, inputEnd) <= sizeLimit)
             op(exec, make_iterator<Iterator>()(inputEnd), make_iterator<Iterator>()(inputBegin),
-               ::std::forward<Rest>(rest)...);
+               dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator, typename OutputIterator, typename... Rest>
@@ -490,7 +492,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
     {
         if (::std::distance(inputBegin, inputEnd) <= sizeLimit)
             op(exec, make_iterator<InputIterator>()(inputEnd), make_iterator<InputIterator>()(inputBegin),
-               make_iterator<OutputIterator>()(outputBegin + (inputEnd - inputBegin)), ::std::forward<Rest>(rest)...);
+               make_iterator<OutputIterator>()(outputBegin + (inputEnd - inputBegin)), dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator, typename OutputIterator, typename... Rest>
@@ -502,7 +504,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
         if (::std::distance(inputBegin, inputEnd) <= sizeLimit)
             op(exec, make_iterator<InputIterator>()(inputEnd), make_iterator<InputIterator>()(inputBegin),
                make_iterator<OutputIterator>()(outputEnd), make_iterator<OutputIterator>()(outputBegin),
-               ::std::forward<Rest>(rest)...);
+               dpl::forward<Rest>(rest)...);
     }
 
     template <typename Policy, typename Op, typename InputIterator1, typename InputIterator2, typename OutputIterator,
@@ -516,7 +518,7 @@ struct iterator_invoker<IteratorTag, /* IsReverse = */ ::std::true_type>
             op(exec, make_iterator<InputIterator1>()(inputEnd1), make_iterator<InputIterator1>()(inputBegin1),
                make_iterator<InputIterator2>()(inputEnd2), make_iterator<InputIterator2>()(inputBegin2),
                make_iterator<OutputIterator>()(outputEnd), make_iterator<OutputIterator>()(outputBegin),
-               ::std::forward<Rest>(rest)...);
+               dpl::forward<Rest>(rest)...);
     }
 };
 
@@ -539,13 +541,13 @@ struct reverse_invoker
     operator()(Rest&&... rest)
     {
         // Random-access iterator
-        iterator_invoker<::std::random_access_iterator_tag, IsReverse>()(::std::forward<Rest>(rest)...);
+        iterator_invoker<::std::random_access_iterator_tag, IsReverse>()(dpl::forward<Rest>(rest)...);
 
         // Forward iterator
-        iterator_invoker<::std::forward_iterator_tag, IsReverse>()(::std::forward<Rest>(rest)...);
+        iterator_invoker<::std::forward_iterator_tag, IsReverse>()(dpl::forward<Rest>(rest)...);
 
         // Bidirectional iterator
-        iterator_invoker<::std::bidirectional_iterator_tag, IsReverse>()(::std::forward<Rest>(rest)...);
+        iterator_invoker<::std::bidirectional_iterator_tag, IsReverse>()(dpl::forward<Rest>(rest)...);
     }
 };
 
@@ -555,8 +557,8 @@ struct invoke_on_all_iterator_types
     void
     operator()(Rest&&... rest)
     {
-        reverse_invoker</* IsReverse = */ ::std::false_type>()(::std::forward<Rest>(rest)...);
-        reverse_invoker</* IsReverse = */ ::std::true_type>()(::std::forward<Rest>(rest)...);
+        reverse_invoker</* IsReverse = */ ::std::false_type>()(dpl::forward<Rest>(rest)...);
+        reverse_invoker</* IsReverse = */ ::std::true_type>()(dpl::forward<Rest>(rest)...);
     }
 };
 } /* namespace TestUtils */

@@ -51,10 +51,10 @@ struct invoke_on_all_host_policies
 
 #if !TEST_ONLY_HETERO_POLICIES
         // Try static execution policies
-        invoke_on_all_iterator_types()(seq,       op, ::std::forward<T>(rest)...);
-        invoke_on_all_iterator_types()(unseq,     op, ::std::forward<T>(rest)...);
-        invoke_on_all_iterator_types()(par,       op, ::std::forward<T>(rest)...);
-        invoke_on_all_iterator_types()(par_unseq, op, ::std::forward<T>(rest)...);
+        invoke_on_all_iterator_types()(seq,       op, dpl::forward<T>(rest)...);
+        invoke_on_all_iterator_types()(unseq,     op, dpl::forward<T>(rest)...);
+        invoke_on_all_iterator_types()(par,       op, dpl::forward<T>(rest)...);
+        invoke_on_all_iterator_types()(par_unseq, op, dpl::forward<T>(rest)...);
 #endif
     }
 };
@@ -144,7 +144,7 @@ struct invoke_on_all_hetero_policies
                 oneapi::dpl::execution::make_device_policy<kernel_name>(queue);
 #endif
             iterator_invoker<::std::random_access_iterator_tag, /*IsReverse*/ ::std::false_type>()(
-                my_policy, op, ::std::forward<Args>(rest)...);
+                my_policy, op, dpl::forward<Args>(rest)...);
         }
         else
         {
@@ -162,9 +162,9 @@ struct invoke_on_all_policies
     void
     operator()(Op op, T&&... rest)
     {
-        invoke_on_all_host_policies()(op, ::std::forward<T>(rest)...);
+        invoke_on_all_host_policies()(op, dpl::forward<T>(rest)...);
 #if TEST_DPCPP_BACKEND_PRESENT
-        invoke_on_all_hetero_policies<CallNumber>()(op, ::std::forward<T>(rest)...);
+        invoke_on_all_hetero_policies<CallNumber>()(op, dpl::forward<T>(rest)...);
 #endif
     }
 };
