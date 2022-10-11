@@ -32,7 +32,7 @@ void test_edges()
 CLANG_DIAGNOSTIC_PUSH
 CLANG_DIAGNOSTIC_IGNORED_AUTOLOGICAL_CONSTANT_COMPARE
 
-    const double pi = std::atan2(+0., -0.);
+    const double pi = dpl::atan2(+0., -0.);
     const unsigned N = sizeof(testcases) / sizeof(testcases[0]);
     for (unsigned i = 0; i < N; ++i)
     {
