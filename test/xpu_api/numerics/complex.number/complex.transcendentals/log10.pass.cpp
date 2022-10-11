@@ -42,7 +42,7 @@ CLANG_DIAGNOSTIC_IGNORED_AUTOLOGICAL_CONSTANT_COMPARE
     for (unsigned i = 0; i < N; ++i)
     {
         dpl::complex<double> r = dpl::log10(testcases[i]);
-        dpl::complex<double> z = dpl::log(testcases[i]) / std::log(10);
+        dpl::complex<double> z = dpl::log(testcases[i]) / dpl::log(10);
         if (dpl::isnan(dpl::real(r)))
             assert(dpl::isnan(dpl::real(z)));
         else
