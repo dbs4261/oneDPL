@@ -14,6 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "support/test_config.h"
+#include "support/test_macros.h"
 
 #include _PSTL_TEST_HEADER(execution)
 #include _PSTL_TEST_HEADER(algorithm)
@@ -52,10 +53,10 @@
 #define _PSTL_TEST_STABLE_SORT
 #define _PSTL_TEST_LEXICOGRAPHICAL_COMPIARE
 #define _PSTL_TEST_COUNTING_ZIP_TRANSFORM
-#if (__cplusplus >= 201703L)
+#if TEST_STD_VER >= 17
 #   define _PSTL_TEST_FOR_EACH_STRUCTURED_BINDING
 #   define _PSTL_TEST_EQUAL_STRUCTURED_BINDING
-#endif
+#endif // TEST_STD_VER >= 17
 #endif
 
 using namespace TestUtils;
