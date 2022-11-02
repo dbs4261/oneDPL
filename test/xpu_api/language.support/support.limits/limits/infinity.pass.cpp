@@ -71,8 +71,8 @@ ONEDPL_TEST_NUM_MAIN
 #endif
     float zero = 0;
     test<float>(1.f/zero);
-    IF_DOUBLE_SUPPORT_L([&zero]() { test<double>(1. / zero); })
-    IF_LONG_DOUBLE_SUPPORT_L([&zero]() { test<long double>(1. / zero); })
+    TestUtils::invoke_test_if(HasDoubleSupportInRuntime(), [&zero]() { test<double>(1. / zero); });
+    TestUtils::invoke_test_if(HasLongDoubleSupportInCompiletime(), [&zero]() { test<long double>(1. / zero); });
 
   return 0;
 }
