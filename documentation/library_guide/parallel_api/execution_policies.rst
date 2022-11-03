@@ -127,7 +127,7 @@ and ``using namespace sycl;`` directives when referring to policy classes and fu
 
 .. code:: cpp
 
-  auto policy_c = device_policy<class PolicyС> {cpu_selector{}};
+  auto policy_c = device_policy<class PolicyС> {cpu_selector_v{}};
   std::for_each(policy_c, ...);
 
 .. code:: cpp
