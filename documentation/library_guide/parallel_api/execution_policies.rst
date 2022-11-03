@@ -122,7 +122,7 @@ and ``using namespace sycl;`` directives when referring to policy classes and fu
 
 .. code:: cpp
 
-  auto policy_b = device_policy<class PolicyB> {device{gpu_selector{}}};
+  auto policy_b = device_policy<class PolicyB> {device{gpu_selector_v{}}};
   std::for_each(policy_b, ...);
 
 .. code:: cpp
