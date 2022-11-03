@@ -365,7 +365,10 @@ __kernel_work_group_size(_ExecutionPolicy&& __policy, const sycl::kernel& __kern
     const sycl::device& __device = __policy.queue().get_device();
     const ::std::size_t __max_wg_size =
 #if _USE_KERNEL_DEVICE_SPECIFIC_API
-        __kernel.template get_info<sycl::info::kernel_device_specific::work_group_size>(__device);
+        __kernel.template get_info<sycl::info::kernel_device_specific::work_group_size>(__device);      // KSATODO C:\Work\gitHub-IntelLLVM\sycl\include\sycl\kernel.hpp :   template <typename Param>
+                                                                                                        // __SYCL2020_DEPRECATED("Use the overload without the second parameter")
+                                                                                                        // typename detail::is_kernel_device_specific_info_desc<Param>::return_type get_info(const device& Device,
+                                                                                                        //                                                                                   const range<3>& WGSize) const;
 #else
         __kernel.template get_work_group_info<sycl::info::kernel_work_group::work_group_size>(__device);
 #endif
