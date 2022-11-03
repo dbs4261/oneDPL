@@ -119,7 +119,11 @@ make_new_policy(_Policy&& __policy)
         oneapi::dpl::execution::make_fpga_policy(sycl::queue{default_selector});
 #    endif // ONEDPL_USE_PREDEFINED_POLICIES
 #else
+#if __LIBSYCL_VERSION >= 50700
+    auto default_selector = sycl::default_selector_v{};
+#else
     auto default_selector = sycl::default_selector{};
+#endif
     auto&& default_dpcpp_policy =
 #    if ONEDPL_USE_PREDEFINED_POLICIES
         oneapi::dpl::execution::dpcpp_default;

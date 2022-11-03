@@ -66,4 +66,11 @@ typename Engine::scalar_type test(sycl::queue& queue) {
     return dpstd_samples[REF_SAMPLE_ID];
 }
 
+using __default_selector_v = 
+#if __LIBSYCL_VERSION >= 50700
+    sycl::default_selector_v;
+#else
+    sycl::default_selector;
+#endif
+
 #endif // ifndef DPSTD_RANDOM_CONFORMANCE_TESTS_COMMON
