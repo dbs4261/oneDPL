@@ -36,7 +36,7 @@ struct DefaultKernelName;
 
 //We can create device_policy object:
 // 1. from sycl::queue
-// 2. from sycl::device_selector (implicitly through sycl::queue)
+// 2. from sycl::device_selector_v (implicitly through sycl::queue)
 // 3. from sycl::device
 // 4. from other device_policy encapsulating the same queue type
 template <typename KernelName = DefaultKernelName>
