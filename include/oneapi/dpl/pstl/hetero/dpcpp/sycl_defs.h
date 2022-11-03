@@ -88,6 +88,13 @@ using __maximum = sycl::maximum<_T>;
 template <typename _T>
 using __minimum = sycl::minimum<_T>;
 
+template <typename DataT, int Dimensions>
+#if __LIBSYCL_VERSION >= 50700
+using __local_accessor = sycl::local_accessor<DataT, Dimensions>;
+#else
+using __local_accessor = sycl::accessor<DataT, Dimensions, access_mode::read_write, __dpl_sycl::__target::local>;
+#endif
+
 #else  // _ONEDPL_SYCL2020_FUNCTIONAL_OBJECTS_PRESENT
 template <typename _T>
 using __plus = sycl::ONEAPI::plus<_T>;
