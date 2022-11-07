@@ -206,7 +206,7 @@ __check_size(int) -> decltype(::std::declval<_R&>().size());
 
 template <typename _R>
 auto
-__check_size(...) -> decltype(::std::declval<_R&>().get_count());
+__check_size(...) -> decltype(::std::declval<_R&>().get_count());       // KSATODO C:\Work\gitHub-IntelLLVM\sycl\include\sycl\types.hpp __SYCL2020_DEPRECATED("get_count() is deprecated, please use size() instead")
 
 template <typename _R>
 using __difference_t = typename ::std::make_signed<decltype(__check_size<_R>(0))>::type;
