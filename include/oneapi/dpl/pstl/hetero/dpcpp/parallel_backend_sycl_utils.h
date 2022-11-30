@@ -284,6 +284,9 @@ struct __is_comp_descending<oneapi::dpl::__internal::__pstl_greater>
     static constexpr bool value = true;
 };
 
+template <typename _Proj, typename _ValueType>
+using __key_type = decltype(::std::declval<_Proj&>()(::std::declval<_ValueType&>()));
+
 //-----------------------------------------------------------------------
 // temporary "buffer" constructed over specified container type
 //-----------------------------------------------------------------------
