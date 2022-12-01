@@ -100,7 +100,7 @@ DEFINE_TEST_1(test_with_vector, BinaryOperation)
 
 #if TEST_DPCPP_BACKEND_PRESENT
 
-#    include "support/sycl_alloc_utils.h"
+#include "support/sycl_alloc_utils.h"
 
 template <sycl::usm::alloc alloc_type, typename KernelName, typename _BinaryOp = oneapi::dpl::__internal::__pstl_plus>
 void
@@ -195,9 +195,9 @@ main()
     using BinaryOp = UserBinaryOperation<int>;
 #if TEST_DPCPP_BACKEND_PRESENT
     sycl::queue q;
-#    if _ONEDPL_DEBUG_SYCL
+#if _ONEDPL_DEBUG_SYCL
     std::cout << "    Device Name = " << q.get_device().get_info<sycl::info::device::name>().c_str() << "\n";
-#    endif // _ONEDPL_DEBUG_SYCL
+#endif // _ONEDPL_DEBUG_SYCL
 
     // Run tests for USM shared memory
     test_with_usm<sycl::usm::alloc::shared, class KernelName1>(q);
