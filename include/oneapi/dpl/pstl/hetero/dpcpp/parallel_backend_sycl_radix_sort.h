@@ -297,7 +297,7 @@ __radix_sort_count_submit(_ExecutionPolicy&& __exec, ::std::size_t __segments, :
 
     const auto __val_buf_size = __val_rng.size();
     // iteration space info
-    const ::std::size_t __blocks_total = __get_roundedup_div(__val_buf_size, __block_size);
+    const auto __blocks_total = __get_roundedup_div(__val_buf_size, __block_size);
     const ::std::size_t __blocks_per_segment = __get_roundedup_div(__blocks_total, __segments);
 
     auto __count_rng =
