@@ -44,13 +44,11 @@ struct type_traits_t<sycl::vec<_T, _N>>
 template <typename _T>
 using element_type_t = typename type_traits_t<_T>::element_type;
 
-typedef union
-{
+typedef union {
     uint32_t hex[2];
 } dp_union_t;
 
-typedef union
-{
+typedef union {
     uint32_t hex[1];
 } sp_union_t;
 

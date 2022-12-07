@@ -56,9 +56,9 @@ __brick_transform_reduce(_RandomAccessIterator1 __first1, _RandomAccessIterator1
                          /*is_vector=*/::std::true_type) noexcept
 {
     typedef typename ::std::iterator_traits<_RandomAccessIterator1>::difference_type _DifferenceType;
-    return __unseq_backend::__simd_transform_reduce(__last1 - __first1, __init, __binary_op1,
-                                                    [=, &__binary_op2](_DifferenceType __i)
-                                                    { return __binary_op2(__first1[__i], __first2[__i]); });
+    return __unseq_backend::__simd_transform_reduce(
+        __last1 - __first1, __init, __binary_op1,
+        [=, &__binary_op2](_DifferenceType __i) { return __binary_op2(__first1[__i], __first2[__i]); });
 }
 
 template <class _ExecutionPolicy, class _ForwardIterator1, class _ForwardIterator2, class _Tp, class _BinaryOperation1,
@@ -79,22 +79,20 @@ __pattern_transform_reduce(_ExecutionPolicy&& __exec, _RandomAccessIterator1 __f
                            _RandomAccessIterator2 __first2, _Tp __init, _BinaryOperation1 __binary_op1,
                            _BinaryOperation2 __binary_op2, _IsVector __is_vector, /*is_parallel=*/::std::true_type)
 {
-    return __internal::__except_handler(
-        [&]()
-        {
-            return __par_backend::__parallel_transform_reduce(
-                ::std::forward<_ExecutionPolicy>(__exec), __first1, __last1,
-                [__first1, __first2, __binary_op2](_RandomAccessIterator1 __i) mutable
-                { return __binary_op2(*__i, *(__first2 + (__i - __first1))); },
-                __init,
-                __binary_op1, // Combine
-                [__first1, __first2, __binary_op1, __binary_op2,
-                 __is_vector](_RandomAccessIterator1 __i, _RandomAccessIterator1 __j, _Tp __init) -> _Tp
-                {
-                    return __internal::__brick_transform_reduce(__i, __j, __first2 + (__i - __first1), __init,
-                                                                __binary_op1, __binary_op2, __is_vector);
-                });
-        });
+    return __internal::__except_handler([&]() {
+        return __par_backend::__parallel_transform_reduce(
+            ::std::forward<_ExecutionPolicy>(__exec), __first1, __last1,
+            [__first1, __first2, __binary_op2](_RandomAccessIterator1 __i) mutable {
+                return __binary_op2(*__i, *(__first2 + (__i - __first1)));
+            },
+            __init,
+            __binary_op1, // Combine
+            [__first1, __first2, __binary_op1, __binary_op2,
+             __is_vector](_RandomAccessIterator1 __i, _RandomAccessIterator1 __j, _Tp __init) -> _Tp {
+                return __internal::__brick_transform_reduce(__i, __j, __first2 + (__i - __first1), __init, __binary_op1,
+                                                            __binary_op2, __is_vector);
+            });
+    });
 }
 
 //------------------------------------------------------------------------
@@ -120,9 +118,9 @@ __brick_transform_reduce(_RandomAccessIterator __first, _RandomAccessIterator __
                          /*is_vector=*/::std::true_type) noexcept
 {
     typedef typename ::std::iterator_traits<_RandomAccessIterator>::difference_type _DifferenceType;
-    return __unseq_backend::__simd_transform_reduce(__last - __first, __init, __binary_op,
-                                                    [=, &__unary_op](_DifferenceType __i)
-                                                    { return __unary_op(__first[__i]); });
+    return __unseq_backend::__simd_transform_reduce(
+        __last - __first, __init, __binary_op,
+        [=, &__unary_op](_DifferenceType __i) { return __unary_op(__first[__i]); });
 }
 
 template <class _ExecutionPolicy, class _ForwardIterator, class _Tp, class _BinaryOperation, class _UnaryOperation,
@@ -142,17 +140,14 @@ __pattern_transform_reduce(_ExecutionPolicy&& __exec, _RandomAccessIterator __fi
                            _Tp __init, _BinaryOperation __binary_op, _UnaryOperation __unary_op, _IsVector __is_vector,
                            /*is_parallel=*/::std::true_type)
 {
-    return __internal::__except_handler(
-        [&]()
-        {
-            return __par_backend::__parallel_transform_reduce(
-                ::std::forward<_ExecutionPolicy>(__exec), __first, __last,
-                [__unary_op](_RandomAccessIterator __i) mutable { return __unary_op(*__i); }, __init, __binary_op,
-                [__unary_op, __binary_op, __is_vector](_RandomAccessIterator __i, _RandomAccessIterator __j, _Tp __init)
-                {
-                    return __internal::__brick_transform_reduce(__i, __j, __init, __binary_op, __unary_op, __is_vector);
-                });
-        });
+    return __internal::__except_handler([&]() {
+        return __par_backend::__parallel_transform_reduce(
+            ::std::forward<_ExecutionPolicy>(__exec), __first, __last,
+            [__unary_op](_RandomAccessIterator __i) mutable { return __unary_op(*__i); }, __init, __binary_op,
+            [__unary_op, __binary_op, __is_vector](_RandomAccessIterator __i, _RandomAccessIterator __j, _Tp __init) {
+                return __internal::__brick_transform_reduce(__i, __j, __init, __binary_op, __unary_op, __is_vector);
+            });
+    });
 }
 
 //------------------------------------------------------------------------
@@ -253,29 +248,25 @@ __pattern_transform_scan(_ExecutionPolicy&& __exec, _RandomAccessIterator __firs
 {
     typedef typename ::std::iterator_traits<_RandomAccessIterator>::difference_type _DifferenceType;
 
-    return __internal::__except_handler(
-        [&]()
-        {
-            __par_backend::__parallel_transform_scan(
-                ::std::forward<_ExecutionPolicy>(__exec), __last - __first,
-                [__first, __unary_op](_DifferenceType __i) mutable { return __unary_op(__first[__i]); }, __init,
-                __binary_op,
-                [__first, __unary_op, __binary_op](_DifferenceType __i, _DifferenceType __j, _Tp __init)
-                {
-                    // Execute serial __brick_transform_reduce, due to the explicit SIMD vectorization (reduction) requires a commutative operation for the guarantee of correct scan.
-                    return __internal::__brick_transform_reduce(__first + __i, __first + __j, __init, __binary_op,
-                                                                __unary_op,
-                                                                /*__is_vector*/ ::std::false_type());
-                },
-                [__first, __unary_op, __binary_op, __result, __is_vector](_DifferenceType __i, _DifferenceType __j,
-                                                                          _Tp __init)
-                {
-                    return __internal::__brick_transform_scan(__first + __i, __first + __j, __result + __i, __unary_op,
-                                                              __init, __binary_op, _Inclusive(), __is_vector)
-                        .second;
-                });
-            return __result + (__last - __first);
-        });
+    return __internal::__except_handler([&]() {
+        __par_backend::__parallel_transform_scan(
+            ::std::forward<_ExecutionPolicy>(__exec), __last - __first,
+            [__first, __unary_op](_DifferenceType __i) mutable { return __unary_op(__first[__i]); }, __init,
+            __binary_op,
+            [__first, __unary_op, __binary_op](_DifferenceType __i, _DifferenceType __j, _Tp __init) {
+                // Execute serial __brick_transform_reduce, due to the explicit SIMD vectorization (reduction) requires a commutative operation for the guarantee of correct scan.
+                return __internal::__brick_transform_reduce(__first + __i, __first + __j, __init, __binary_op,
+                                                            __unary_op,
+                                                            /*__is_vector*/ ::std::false_type());
+            },
+            [__first, __unary_op, __binary_op, __result, __is_vector](_DifferenceType __i, _DifferenceType __j,
+                                                                      _Tp __init) {
+                return __internal::__brick_transform_scan(__first + __i, __first + __j, __result + __i, __unary_op,
+                                                          __init, __binary_op, _Inclusive(), __is_vector)
+                    .second;
+            });
+        return __result + (__last - __first);
+    });
 }
 
 template <class _ExecutionPolicy, class _RandomAccessIterator, class _OutputIterator, class _UnaryOperation, class _Tp,
@@ -293,31 +284,26 @@ __pattern_transform_scan(_ExecutionPolicy&& __exec, _RandomAccessIterator __firs
     {
         return __result;
     }
-    return __internal::__except_handler(
-        [&]()
-        {
-            __par_backend::__parallel_strict_scan(
-                ::std::forward<_ExecutionPolicy>(__exec), __n, __init,
-                [__first, __unary_op, __binary_op, __result, __is_vector](_DifferenceType __i, _DifferenceType __len)
-                {
-                    return __internal::__brick_transform_scan(__first + __i, __first + (__i + __len), __result + __i,
-                                                              __unary_op, _Tp{}, __binary_op, _Inclusive(), __is_vector)
-                        .second;
-                },
-                __binary_op,
-                [__result, &__binary_op](_DifferenceType __i, _DifferenceType __len, _Tp __initial)
-                {
-                    return *(::std::transform(__result + __i, __result + __i + __len, __result + __i,
-                                              [&__initial, &__binary_op](const _Tp& __x)
-                                              {
-                                                  _ONEDPL_PRAGMA_FORCEINLINE
-                                                  return __binary_op(__initial, __x);
-                                              }) -
-                             1);
-                },
-                [](_Tp) {});
-            return __result + (__last - __first);
-        });
+    return __internal::__except_handler([&]() {
+        __par_backend::__parallel_strict_scan(
+            ::std::forward<_ExecutionPolicy>(__exec), __n, __init,
+            [__first, __unary_op, __binary_op, __result, __is_vector](_DifferenceType __i, _DifferenceType __len) {
+                return __internal::__brick_transform_scan(__first + __i, __first + (__i + __len), __result + __i,
+                                                          __unary_op, _Tp{}, __binary_op, _Inclusive(), __is_vector)
+                    .second;
+            },
+            __binary_op,
+            [__result, &__binary_op](_DifferenceType __i, _DifferenceType __len, _Tp __initial) {
+                return *(::std::transform(__result + __i, __result + __i + __len, __result + __i,
+                                          [&__initial, &__binary_op](const _Tp& __x) {
+                                              _ONEDPL_PRAGMA_FORCEINLINE
+                                              return __binary_op(__initial, __x);
+                                          }) -
+                         1);
+            },
+            [](_Tp) {});
+        return __result + (__last - __first);
+    });
 }
 
 // transform_scan without initial element
@@ -367,9 +353,9 @@ __brick_adjacent_difference(_RandomAccessIterator1 __first, _RandomAccessIterato
 
     auto __n = __last - __first;
     *__d_first = *__first;
-    return __unseq_backend::__simd_walk_3(__first + 1, __n - 1, __first, __d_first + 1,
-                                          [&__op](_ReferenceType1 __x, _ReferenceType1 __y, _ReferenceType2 __z)
-                                          { __z = __op(__x, __y); });
+    return __unseq_backend::__simd_walk_3(
+        __first + 1, __n - 1, __first, __d_first + 1,
+        [&__op](_ReferenceType1 __x, _ReferenceType1 __y, _ReferenceType2 __z) { __z = __op(__x, __y); });
 }
 
 template <class _ExecutionPolicy, class _ForwardIterator, class _OutputIterator, class _BinaryOperation,
@@ -396,8 +382,7 @@ __pattern_adjacent_difference(_ExecutionPolicy&& __exec, _RandomAccessIterator1 
     *__d_first = *__first;
     __par_backend::__parallel_for(
         ::std::forward<_ExecutionPolicy>(__exec), __first, __last - 1,
-        [&__op, __is_vector, __d_first, __first](_RandomAccessIterator1 __b, _RandomAccessIterator1 __e)
-        {
+        [&__op, __is_vector, __d_first, __first](_RandomAccessIterator1 __b, _RandomAccessIterator1 __e) {
             _RandomAccessIterator2 __d_b = __d_first + (__b - __first);
             __internal::__brick_walk3(
                 __b, __e, __b + 1, __d_b + 1,

@@ -573,17 +573,15 @@ struct __global_scan_functor
             __out_acc[__item_idx] =
                 static_cast<typename __internal::__get_tuple_type<__in_type, __out_type>::__type>(__bin_op_result);
         }
-        __internal::__invoke_if_not(_Inclusive{},
-                                    [&]()
-                                    {
-                                        //store an initial value to the output first position should be done as postprocess (for in-place scanning)
-                                        if (__item_idx == 0)
-                                        {
-                                            using _Tp = typename _InitType::__value_type;
-                                            __init_processing<_Tp> __use_init{};
-                                            __use_init(__init, __out_acc[__item_idx]);
-                                        }
-                                    });
+        __internal::__invoke_if_not(_Inclusive{}, [&]() {
+            //store an initial value to the output first position should be done as postprocess (for in-place scanning)
+            if (__item_idx == 0)
+            {
+                using _Tp = typename _InitType::__value_type;
+                __init_processing<_Tp> __use_init{};
+                __use_init(__init, __out_acc[__item_idx]);
+            }
+        });
     }
 };
 

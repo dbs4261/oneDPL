@@ -383,8 +383,7 @@ __pattern_min_element(_ExecutionPolicy&& __exec, _Iterator __first, _Iterator __
     using _NoOpFunctor = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
 
     auto __identity_init_fn = __acc_handler_minelement<_ReduceValueType>{};
-    auto __identity_reduce_fn = [__comp](_ReduceValueType __a, _ReduceValueType __b)
-    {
+    auto __identity_reduce_fn = [__comp](_ReduceValueType __a, _ReduceValueType __b) {
         using ::std::get;
         if (__comp(get<1>(__b), get<1>(__a)))
         {
@@ -1034,8 +1033,7 @@ __pattern_is_partitioned(_ExecutionPolicy&& __exec, _Iterator __first, _Iterator
     using _NoOpFunctor = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
 
     auto __identity_init_fn = acc_handler_is_partitioned<_Predicate>{__predicate};
-    auto __identity_reduce_fn = [](_ReduceValueType __val1, _ReduceValueType __val2) -> _ReduceValueType
-    {
+    auto __identity_reduce_fn = [](_ReduceValueType __val1, _ReduceValueType __val2) -> _ReduceValueType {
         _ReduceValueType __table[] = {__broken,     __broken,     __broken,     __broken, __broken,    __all_true,
                                       __true_false, __true_false, __broken,     __broken, __all_false, __broken,
                                       __broken,     __broken,     __true_false, __broken};
@@ -1320,8 +1318,7 @@ __pattern_lexicographical_compare(_ExecutionPolicy&& __exec, _Iterator1 __first1
     using _NoOpFunctor = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
 
     auto __identity_init_fn = acc_handler_lexicographical_compare<_Compare, _ReduceValueType>{__comp};
-    auto __identity_reduce_fn = [](_ReduceValueType __a, _ReduceValueType __b) -> _ReduceValueType
-    {
+    auto __identity_reduce_fn = [](_ReduceValueType __a, _ReduceValueType __b) -> _ReduceValueType {
         bool __is_mismatched = __a != 0;
         return __a * __is_mismatched + __b * !__is_mismatched;
     };

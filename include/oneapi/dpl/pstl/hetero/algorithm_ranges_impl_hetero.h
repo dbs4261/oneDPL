@@ -555,8 +555,7 @@ __pattern_min_element(_ExecutionPolicy&& __exec, _Range&& __rng, _Compare __comp
     using _NoOpFunctor = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
 
     auto __identity_init_fn = __acc_handler_minelement<_ReduceValueType>{};
-    auto __identity_reduce_fn = [__comp](_ReduceValueType __a, _ReduceValueType __b)
-    {
+    auto __identity_reduce_fn = [__comp](_ReduceValueType __a, _ReduceValueType __b) {
         using ::std::get;
         return __comp(get<1>(__b), get<1>(__a)) ? __b : __a;
     };
@@ -727,8 +726,7 @@ __pattern_reduce_by_segment(_ExecutionPolicy&& __exec, _Range1&& __keys, _Range2
         oneapi::dpl::__par_backend_hetero::make_wrapped_policy<__assign_key1_wrapper>(
             ::std::forward<_ExecutionPolicy>(__exec)),
         __view1, __view2,
-        [__n, __binary_pred, __wgroup_size](const auto& __a)
-        {
+        [__n, __binary_pred, __wgroup_size](const auto& __a) {
             // The size of key ranges is one less, so for the last index we do not check the keys,
             // and we need the index itself as the boundaries of the last subrange.
             const auto index = ::std::get<0>(__a);
@@ -771,8 +769,7 @@ __pattern_reduce_by_segment(_ExecutionPolicy&& __exec, _Range1&& __keys, _Range2
         oneapi::dpl::__par_backend_hetero::make_wrapped_policy<__assign_key2_wrapper>(
             ::std::forward<_ExecutionPolicy>(__exec)),
         __view3, __view4,
-        [__m, __result_end, __binary_pred](const auto& __a)
-        {
+        [__m, __result_end, __binary_pred](const auto& __a) {
             // The size of key ranges is one less, so for the last index we do not check the keys,
             // and we need the index itself as the boundaries of the last subrange.
             const auto index = ::std::get<0>(__a);
