@@ -158,8 +158,7 @@ class __kernel_name_composer
     static constexpr ::std::size_t __name_size = __builtin_strlen(__name);
 
     template <::std::size_t... _Is>
-    static __composite<_KernelName, __name[_Is]...>
-    __compose_kernel_name(::std::index_sequence<_Is...>);
+    static __composite<_KernelName, __name[_Is]...> __compose_kernel_name(::std::index_sequence<_Is...>);
 
   public:
     using type = decltype(__compose_kernel_name(::std::make_index_sequence<__name_size>{}));
@@ -241,7 +240,8 @@ __print_device_debug_info(_Policy __policy, size_t __wg_size = 0, size_t __mcu =
 }
 #else
 template <typename _Policy>
-inline void __print_device_debug_info(_Policy, size_t = 0, size_t = 0)
+inline void
+__print_device_debug_info(_Policy, size_t = 0, size_t = 0)
 {
 }
 #endif

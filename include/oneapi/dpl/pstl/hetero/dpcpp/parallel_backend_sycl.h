@@ -221,15 +221,19 @@ struct __parallel_for_submitter<__internal::__optional_kernel_name<_Name...>>
     {
         assert(oneapi::dpl::__ranges::__get_first_range_size(__rngs...) > 0);
         _PRINT_INFO_IN_DEBUG_MODE(__exec);
-        auto __event = __exec.queue().submit([&__rngs..., &__brick, __count](sycl::handler& __cgh) {
-            //get an access to data under SYCL buffer:
-            oneapi::dpl::__ranges::__require_access(__cgh, __rngs...);
+        auto __event = __exec.queue().submit(
+            [&__rngs..., &__brick, __count](sycl::handler& __cgh)
+            {
+                //get an access to data under SYCL buffer:
+                oneapi::dpl::__ranges::__require_access(__cgh, __rngs...);
 
-            __cgh.parallel_for<_Name...>(sycl::range</*dim=*/1>(__count), [=](sycl::item</*dim=*/1> __item_id) {
-                auto __idx = __item_id.get_linear_id();
-                __brick(__idx, __rngs...);
+                __cgh.parallel_for<_Name...>(sycl::range</*dim=*/1>(__count),
+                                             [=](sycl::item</*dim=*/1> __item_id)
+                                             {
+                                                 auto __idx = __item_id.get_linear_id();
+                                                 __brick(__idx, __rngs...);
+                                             });
             });
-        });
         return __future(__event);
     }
 };
@@ -311,49 +315,52 @@ __parallel_transform_reduce(_ExecutionPolicy&& __exec, _Up __u, _LRp __brick_lea
     sycl::event __reduce_event;
     do
     {
-        __reduce_event = __exec.queue().submit([&, __is_first, __offset_1, __offset_2, __n, __n_items,
-                                                __n_groups](sycl::handler& __cgh) {
-            __cgh.depends_on(__reduce_event);
+        __reduce_event = __exec.queue().submit(
+            [&, __is_first, __offset_1, __offset_2, __n, __n_items, __n_groups](sycl::handler& __cgh)
+            {
+                __cgh.depends_on(__reduce_event);
 
-            oneapi::dpl::__ranges::__require_access(__cgh, __rngs...); //get an access to data under SYCL buffer
-            auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
-            sycl::accessor<_Tp, 1, access_mode::read_write, __dpl_sycl::__target::local> __temp_local(
-                sycl::range<1>(__work_group_size), __cgh);
+                oneapi::dpl::__ranges::__require_access(__cgh, __rngs...); //get an access to data under SYCL buffer
+                auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
+                sycl::accessor<_Tp, 1, access_mode::read_write, __dpl_sycl::__target::local> __temp_local(
+                    sycl::range<1>(__work_group_size), __cgh);
 #if _ONEDPL_COMPILE_KERNEL && _ONEDPL_KERNEL_BUNDLE_PRESENT
-            __cgh.use_kernel_bundle(__kernel.get_kernel_bundle());
+                __cgh.use_kernel_bundle(__kernel.get_kernel_bundle());
 #endif
-            __cgh.parallel_for<_ReduceKernel>(
+                __cgh.parallel_for<_ReduceKernel>(
 #if _ONEDPL_COMPILE_KERNEL && !_ONEDPL_KERNEL_BUNDLE_PRESENT
-                __kernel,
+                    __kernel,
 #endif
-                sycl::nd_range<1>(sycl::range<1>(__n_groups * __work_group_size), sycl::range<1>(__work_group_size)),
-                [=](sycl::nd_item<1> __item_id) {
-                    ::std::size_t __global_idx = __item_id.get_global_id(0);
-                    ::std::size_t __local_idx = __item_id.get_local_id(0);
-                    // 1. Initialization (transform part). Fill local memory
-                    if (__is_first)
+                    sycl::nd_range<1>(sycl::range<1>(__n_groups * __work_group_size),
+                                      sycl::range<1>(__work_group_size)),
+                    [=](sycl::nd_item<1> __item_id)
                     {
-                        __u(__item_id, __n, __iters_per_work_item, __global_idx, /*global_offset*/ 0, __temp_local,
-                            __rngs...);
-                    }
-                    else
-                    {
-                        __brick_leaf_reduce(__item_id, __n, __iters_per_work_item, __global_idx, __offset_2,
-                                            __temp_local, __temp_acc);
-                    }
-                    __dpl_sycl::__group_barrier(__item_id);
-                    // 2. Reduce within work group using local memory
-                    _Tp __result = __brick_reduce(__item_id, __global_idx, __n_items, __temp_local);
-                    if (__local_idx == 0)
-                    {
-                        //final reduction
-                        if (__n_groups == 1)
-                            __brick_reduce.apply_init(__init, __result);
+                        ::std::size_t __global_idx = __item_id.get_global_id(0);
+                        ::std::size_t __local_idx = __item_id.get_local_id(0);
+                        // 1. Initialization (transform part). Fill local memory
+                        if (__is_first)
+                        {
+                            __u(__item_id, __n, __iters_per_work_item, __global_idx, /*global_offset*/ 0, __temp_local,
+                                __rngs...);
+                        }
+                        else
+                        {
+                            __brick_leaf_reduce(__item_id, __n, __iters_per_work_item, __global_idx, __offset_2,
+                                                __temp_local, __temp_acc);
+                        }
+                        __dpl_sycl::__group_barrier(__item_id);
+                        // 2. Reduce within work group using local memory
+                        _Tp __result = __brick_reduce(__item_id, __global_idx, __n_items, __temp_local);
+                        if (__local_idx == 0)
+                        {
+                            //final reduction
+                            if (__n_groups == 1)
+                                __brick_reduce.apply_init(__init, __result);
 
-                        __temp_acc[__offset_1 + __item_id.get_group(0)] = __result;
-                    }
-                });
-        });
+                            __temp_acc[__offset_1 + __item_id.get_group(0)] = __result;
+                        }
+                    });
+            });
         if (__is_first)
             __is_first = false;
         ::std::swap(__offset_1, __offset_2);
@@ -378,7 +385,8 @@ struct __global_scan_caller
     {
     }
 
-    void operator()(sycl::item<1> __item) const
+    void
+    operator()(sycl::item<1> __item) const
     {
         __m_global_scan(__item, __m_rng2, __m_rng1, __m_wg_sums_acc, __m_n, __m_size_per_wg);
     }
@@ -445,59 +453,71 @@ struct __parallel_scan_submitter<_CustomName, __internal::__optional_kernel_name
         _PRINT_INFO_IN_DEBUG_MODE(__exec, __wgroup_size, __mcu);
 
         // 1. Local scan on each workgroup
-        auto __submit_event = __exec.queue().submit([&](sycl::handler& __cgh) {
-            oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2); //get an access to data under SYCL buffer
-            auto __wg_sums_acc = __wg_sums.template get_access<access_mode::discard_write>(__cgh);
-            sycl::accessor<_Type, 1, access_mode::discard_read_write, __dpl_sycl::__target::local> __local_acc(
-                __wgroup_size, __cgh);
+        auto __submit_event = __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng1,
+                                                        __rng2); //get an access to data under SYCL buffer
+                auto __wg_sums_acc = __wg_sums.template get_access<access_mode::discard_write>(__cgh);
+                sycl::accessor<_Type, 1, access_mode::discard_read_write, __dpl_sycl::__target::local> __local_acc(
+                    __wgroup_size, __cgh);
 #if _ONEDPL_COMPILE_KERNEL && _ONEDPL_KERNEL_BUNDLE_PRESENT
-            __cgh.use_kernel_bundle(__kernel_1.get_kernel_bundle());
+                __cgh.use_kernel_bundle(__kernel_1.get_kernel_bundle());
 #endif
-            __cgh.parallel_for<_LocalScanKernel>(
+                __cgh.parallel_for<_LocalScanKernel>(
 #if _ONEDPL_COMPILE_KERNEL && !_ONEDPL_KERNEL_BUNDLE_PRESENT
-                __kernel_1,
+                    __kernel_1,
 #endif
-                sycl::nd_range<1>(__n_groups * __wgroup_size, __wgroup_size), [=](sycl::nd_item<1> __item) {
-                    __local_scan(__item, __n, __local_acc, __rng1, __rng2, __wg_sums_acc, __size_per_wg, __wgroup_size,
-                                 __iters_per_witem, __init);
-                });
-        });
+                    sycl::nd_range<1>(__n_groups * __wgroup_size, __wgroup_size),
+                    [=](sycl::nd_item<1> __item)
+                    {
+                        __local_scan(__item, __n, __local_acc, __rng1, __rng2, __wg_sums_acc, __size_per_wg,
+                                     __wgroup_size, __iters_per_witem, __init);
+                    });
+            });
 
         // 2. Scan for the entire group of values scanned from each workgroup (runs on a single workgroup)
         if (__n_groups > 1)
         {
             auto __iters_per_single_wg = (__n_groups - 1) / __wgroup_size + 1;
-            __submit_event = __exec.queue().submit([&](sycl::handler& __cgh) {
-                __cgh.depends_on(__submit_event);
-                auto __wg_sums_acc = __wg_sums.template get_access<access_mode::read_write>(__cgh);
-                sycl::accessor<_Type, 1, access_mode::discard_read_write, __dpl_sycl::__target::local> __local_acc(
-                    __wgroup_size, __cgh);
+            __submit_event = __exec.queue().submit(
+                [&](sycl::handler& __cgh)
+                {
+                    __cgh.depends_on(__submit_event);
+                    auto __wg_sums_acc = __wg_sums.template get_access<access_mode::read_write>(__cgh);
+                    sycl::accessor<_Type, 1, access_mode::discard_read_write, __dpl_sycl::__target::local> __local_acc(
+                        __wgroup_size, __cgh);
 #if _ONEDPL_COMPILE_KERNEL && _ONEDPL_KERNEL_BUNDLE_PRESENT
-                __cgh.use_kernel_bundle(__kernel_2.get_kernel_bundle());
+                    __cgh.use_kernel_bundle(__kernel_2.get_kernel_bundle());
 #endif
-                __cgh.parallel_for<_GroupScanKernel>(
+                    __cgh.parallel_for<_GroupScanKernel>(
 #if _ONEDPL_COMPILE_KERNEL && !_ONEDPL_KERNEL_BUNDLE_PRESENT
-                    __kernel_2,
+                        __kernel_2,
 #endif
-                    // TODO: try to balance work between several workgroups instead of one
-                    sycl::nd_range<1>(__wgroup_size, __wgroup_size), [=](sycl::nd_item<1> __item) {
-                        __group_scan(__item, __n_groups, __local_acc, __wg_sums_acc, __wg_sums_acc,
-                                     /*dummy*/ __wg_sums_acc, __n_groups, __wgroup_size, __iters_per_single_wg);
-                    });
-            });
+                        // TODO: try to balance work between several workgroups instead of one
+                        sycl::nd_range<1>(__wgroup_size, __wgroup_size),
+                        [=](sycl::nd_item<1> __item)
+                        {
+                            __group_scan(__item, __n_groups, __local_acc, __wg_sums_acc, __wg_sums_acc,
+                                         /*dummy*/ __wg_sums_acc, __n_groups, __wgroup_size, __iters_per_single_wg);
+                        });
+                });
         }
 
         // 3. Final scan for whole range
-        auto __final_event = __exec.queue().submit([&](sycl::handler& __cgh) {
-            __cgh.depends_on(__submit_event);
-            oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2); //get an access to data under SYCL buffer
-            auto __wg_sums_acc = __wg_sums.template get_access<access_mode::read>(__cgh);
-            __cgh.parallel_for<_PropagateScanName...>(
-                sycl::range<1>(__n_groups * __size_per_wg),
-                __global_scan_caller<_GlobalScan, typename ::std::decay<_Range2>::type,
-                                     typename ::std::decay<_Range1>::type, decltype(__wg_sums_acc), decltype(__n)>(
-                    __global_scan, __rng2, __rng1, __wg_sums_acc, __n, __size_per_wg));
-        });
+        auto __final_event = __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                __cgh.depends_on(__submit_event);
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng1,
+                                                        __rng2); //get an access to data under SYCL buffer
+                auto __wg_sums_acc = __wg_sums.template get_access<access_mode::read>(__cgh);
+                __cgh.parallel_for<_PropagateScanName...>(
+                    sycl::range<1>(__n_groups * __size_per_wg),
+                    __global_scan_caller<_GlobalScan, typename ::std::decay<_Range2>::type,
+                                         typename ::std::decay<_Range1>::type, decltype(__wg_sums_acc), decltype(__n)>(
+                        __global_scan, __rng2, __rng1, __wg_sums_acc, __n, __size_per_wg));
+            });
 
         return __future(__final_event, sycl::buffer(__wg_sums, sycl::id<1>(__n_groups - 1), sycl::range<1>(1)));
     }
@@ -559,7 +579,8 @@ struct __parallel_find_backward_tag
     using _Compare = oneapi::dpl::__internal::__pstl_greater;
 
     template <typename _DiffType>
-    constexpr static _AtomicType __init_value(_DiffType)
+    constexpr static _AtomicType
+    __init_value(_DiffType)
     {
         return _AtomicType{-1};
     }
@@ -584,7 +605,8 @@ struct __parallel_or_tag
 
     // The template parameter is intended to unify __init_value in tags.
     template <typename _DiffType>
-    constexpr static _AtomicType __init_value(_DiffType)
+    constexpr static _AtomicType
+    __init_value(_DiffType)
     {
         return 0;
     }
@@ -638,7 +660,8 @@ struct __early_exit_find_or
             {
                 oneapi::dpl::__internal::__invoke_if_else(
                     _OrTagType{}, [&__found_local]() { __found_local.store(1); },
-                    [&__found_local, &__comp, &__shifted_idx]() {
+                    [&__found_local, &__comp, &__shifted_idx]()
+                    {
                         for (auto __old = __found_local.load(); __comp(__shifted_idx, __old);
                              __old = __found_local.load())
                         {
@@ -702,54 +725,59 @@ __parallel_find_or(_ExecutionPolicy&& __exec, _Brick __f, _BrickTag __brick_tag,
         auto __temp = sycl::buffer<_AtomicType, 1>(&__result, 1); // temporary storage for global atomic
 
         // main parallel_for
-        __exec.queue().submit([&](sycl::handler& __cgh) {
-            oneapi::dpl::__ranges::__require_access(__cgh, __rngs...);
-            auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
+        __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                oneapi::dpl::__ranges::__require_access(__cgh, __rngs...);
+                auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
 
-            // create local accessor to connect atomic with
-            sycl::accessor<_AtomicType, 1, access_mode::read_write, __dpl_sycl::__target::local> __temp_local(1, __cgh);
+                // create local accessor to connect atomic with
+                sycl::accessor<_AtomicType, 1, access_mode::read_write, __dpl_sycl::__target::local> __temp_local(
+                    1, __cgh);
 #if _ONEDPL_COMPILE_KERNEL && _ONEDPL_KERNEL_BUNDLE_PRESENT
-            __cgh.use_kernel_bundle(__kernel.get_kernel_bundle());
+                __cgh.use_kernel_bundle(__kernel.get_kernel_bundle());
 #endif
-            __cgh.parallel_for<_FindOrKernel>(
+                __cgh.parallel_for<_FindOrKernel>(
 #if _ONEDPL_COMPILE_KERNEL && !_ONEDPL_KERNEL_BUNDLE_PRESENT
-                __kernel,
+                    __kernel,
 #endif
-                sycl::nd_range</*dim=*/1>(sycl::range</*dim=*/1>(__n_groups * __wgroup_size),
-                                          sycl::range</*dim=*/1>(__wgroup_size)),
-                [=](sycl::nd_item</*dim=*/1> __item_id) {
-                    auto __local_idx = __item_id.get_local_id(0);
-
-                    __dpl_sycl::__atomic_ref<_AtomicType, sycl::access::address_space::global_space> __found(
-                        __temp_acc.get_pointer());
-                    __dpl_sycl::__atomic_ref<_AtomicType, sycl::access::address_space::local_space> __found_local(
-                        __temp_local.get_pointer());
-
-                    // 1. Set initial value to local atomic
-                    if (__local_idx == 0)
-                        __found_local.store(__init_value);
-                    __dpl_sycl::__group_barrier(__item_id);
-
-                    // 2. Find any element that satisfies pred and set local atomic value to global atomic
-                    constexpr auto __comp = typename _BrickTag::_Compare{};
-                    __pred(__item_id, __n_iter, __wgroup_size, __comp, __found_local, __brick_tag, __rngs...);
-                    __dpl_sycl::__group_barrier(__item_id);
-
-                    // Set local atomic value to global atomic
-                    if (__local_idx == 0 && __comp(__found_local.load(), __found.load()))
+                    sycl::nd_range</*dim=*/1>(sycl::range</*dim=*/1>(__n_groups * __wgroup_size),
+                                              sycl::range</*dim=*/1>(__wgroup_size)),
+                    [=](sycl::nd_item</*dim=*/1> __item_id)
                     {
-                        oneapi::dpl::__internal::__invoke_if_else(
-                            __or_tag_check, [&__found]() { __found.store(1); },
-                            [&__found_local, &__found, &__comp]() {
-                                for (auto __old = __found.load(); __comp(__found_local.load(), __old);
-                                     __old = __found.load())
+                        auto __local_idx = __item_id.get_local_id(0);
+
+                        __dpl_sycl::__atomic_ref<_AtomicType, sycl::access::address_space::global_space> __found(
+                            __temp_acc.get_pointer());
+                        __dpl_sycl::__atomic_ref<_AtomicType, sycl::access::address_space::local_space> __found_local(
+                            __temp_local.get_pointer());
+
+                        // 1. Set initial value to local atomic
+                        if (__local_idx == 0)
+                            __found_local.store(__init_value);
+                        __dpl_sycl::__group_barrier(__item_id);
+
+                        // 2. Find any element that satisfies pred and set local atomic value to global atomic
+                        constexpr auto __comp = typename _BrickTag::_Compare{};
+                        __pred(__item_id, __n_iter, __wgroup_size, __comp, __found_local, __brick_tag, __rngs...);
+                        __dpl_sycl::__group_barrier(__item_id);
+
+                        // Set local atomic value to global atomic
+                        if (__local_idx == 0 && __comp(__found_local.load(), __found.load()))
+                        {
+                            oneapi::dpl::__internal::__invoke_if_else(
+                                __or_tag_check, [&__found]() { __found.store(1); },
+                                [&__found_local, &__found, &__comp]()
                                 {
-                                    __found.compare_exchange_strong(__old, __found_local.load());
-                                }
-                            });
-                    }
-                });
-        });
+                                    for (auto __old = __found.load(); __comp(__found_local.load(), __old);
+                                         __old = __found.load())
+                                    {
+                                        __found.compare_exchange_strong(__old, __found_local.load());
+                                    }
+                                });
+                        }
+                    });
+            });
         //The end of the scope  -  a point of synchronization (on temporary sycl buffer destruction)
     }
 
@@ -1067,13 +1095,19 @@ struct __parallel_merge_submitter<__internal::__optional_kernel_name<_Name...>>
         const auto __max_n = ::std::max(__n, static_cast<decltype(__n)>(__n_2));
         const ::std::size_t __steps = ((__max_n - 1) / __chunk) + 1;
 
-        auto __event = __exec.queue().submit([&](sycl::handler& __cgh) {
-            oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2, __rng3);
-            __cgh.parallel_for<_Name...>(sycl::range</*dim=*/1>(__steps), [=](sycl::item</*dim=*/1> __item_id) {
-                __full_merge_kernel()(__item_id.get_linear_id() * __chunk, __rng1, decltype(__n)(0), __n, __rng2,
-                                      decltype(__n_2)(0), __n_2, __rng3, decltype(__n)(0), __comp, __chunk);
+        auto __event = __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2, __rng3);
+                __cgh.parallel_for<_Name...>(sycl::range</*dim=*/1>(__steps),
+                                             [=](sycl::item</*dim=*/1> __item_id)
+                                             {
+                                                 __full_merge_kernel()(__item_id.get_linear_id() * __chunk, __rng1,
+                                                                       decltype(__n)(0), __n, __rng2,
+                                                                       decltype(__n_2)(0), __n_2, __rng3,
+                                                                       decltype(__n)(0), __comp, __chunk);
+                                             });
             });
-        });
         return __future(__event);
     }
 };
@@ -1157,16 +1191,19 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
         const _Size __leaf_steps = ((__n - 1) / __leaf) + 1;
 
         // 1. Perform sorting of the leaves of the merge sort tree
-        sycl::event __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
-            oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-            __cgh.parallel_for<_LeafSortName...>(sycl::range</*dim=*/1>(__leaf_steps),
-                                                 [=](sycl::item</*dim=*/1> __item_id) {
-                                                     const _Size __idx = __item_id.get_linear_id() * __leaf;
-                                                     const _Size __start = __idx;
-                                                     const _Size __end = sycl::min(__start + __leaf, __n);
-                                                     __leaf_sort_kernel()(__rng, __start, __end, __comp);
-                                                 });
-        });
+        sycl::event __event1 = __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                __cgh.parallel_for<_LeafSortName...>(sycl::range</*dim=*/1>(__leaf_steps),
+                                                     [=](sycl::item</*dim=*/1> __item_id)
+                                                     {
+                                                         const _Size __idx = __item_id.get_linear_id() * __leaf;
+                                                         const _Size __start = __idx;
+                                                         const _Size __end = sycl::min(__start + __leaf, __n);
+                                                         __leaf_sort_kernel()(__rng, __start, __end, __comp);
+                                                     });
+            });
 
         _Size __sorted = __leaf;
         // Chunk size cannot be bigger than size of a sorted sequence
@@ -1205,35 +1242,38 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
             _Size __full_pairs_steps = __full_pairs * __chunks_in_sorted;
             _Size __steps = __full_pairs_steps + __incomplete_pair_steps;
 
-            __event1 = __exec.queue().submit([&, __data_in_temp, __sorted, __sorted_pair, __chunk, __chunks_in_sorted,
-                                              __steps](sycl::handler& __cgh) {
-                __cgh.depends_on(__event1);
-                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-                auto __temp_acc = __temp.template get_access<__par_backend_hetero::access_mode::read_write>(__cgh);
-                __cgh.parallel_for<_GlobalSortName...>(
-                    sycl::range</*dim=*/1>(__steps), [=](sycl::item</*dim=*/1> __item_id) {
-                        const _Size __idx = __item_id.get_linear_id();
-                        // Borders of the first and the second sorted sequences
-                        const _Size __start_1 = sycl::min(__sorted_pair * ((__idx * __chunk) / __sorted), __n);
-                        const _Size __end_1 = sycl::min(__start_1 + __sorted, __n);
-                        const _Size __start_2 = __end_1;
-                        const _Size __end_2 = sycl::min(__start_2 + __sorted, __n);
-
-                        // Distance between the beginning of a sorted sequence and the beginning of a chunk
-                        const _Size __offset = __chunk * (__idx % __chunks_in_sorted);
-
-                        if (!__data_in_temp)
+            __event1 = __exec.queue().submit(
+                [&, __data_in_temp, __sorted, __sorted_pair, __chunk, __chunks_in_sorted, __steps](sycl::handler& __cgh)
+                {
+                    __cgh.depends_on(__event1);
+                    oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                    auto __temp_acc = __temp.template get_access<__par_backend_hetero::access_mode::read_write>(__cgh);
+                    __cgh.parallel_for<_GlobalSortName...>(
+                        sycl::range</*dim=*/1>(__steps),
+                        [=](sycl::item</*dim=*/1> __item_id)
                         {
-                            __merge(__offset, __rng, __start_1, __end_1, __rng, __start_2, __end_2, __temp_acc,
-                                    __start_1, __comp, __chunk);
-                        }
-                        else
-                        {
-                            __merge(__offset, __temp_acc, __start_1, __end_1, __temp_acc, __start_2, __end_2, __rng,
-                                    __start_1, __comp, __chunk);
-                        }
-                    });
-            });
+                            const _Size __idx = __item_id.get_linear_id();
+                            // Borders of the first and the second sorted sequences
+                            const _Size __start_1 = sycl::min(__sorted_pair * ((__idx * __chunk) / __sorted), __n);
+                            const _Size __end_1 = sycl::min(__start_1 + __sorted, __n);
+                            const _Size __start_2 = __end_1;
+                            const _Size __end_2 = sycl::min(__start_2 + __sorted, __n);
+
+                            // Distance between the beginning of a sorted sequence and the beginning of a chunk
+                            const _Size __offset = __chunk * (__idx % __chunks_in_sorted);
+
+                            if (!__data_in_temp)
+                            {
+                                __merge(__offset, __rng, __start_1, __end_1, __rng, __start_2, __end_2, __temp_acc,
+                                        __start_1, __comp, __chunk);
+                            }
+                            else
+                            {
+                                __merge(__offset, __temp_acc, __start_1, __end_1, __temp_acc, __start_2, __end_2, __rng,
+                                        __start_1, __comp, __chunk);
+                            }
+                        });
+                });
             __data_in_temp = !__data_in_temp;
             __sorted = __sorted_pair;
             if (__chunk < __optimal_chunk)
@@ -1243,15 +1283,17 @@ struct __parallel_sort_submitter<__internal::__optional_kernel_name<_LeafSortNam
         // 3. If the data remained in the temporary buffer then copy it back
         if (__data_in_temp)
         {
-            __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
-                __cgh.depends_on(__event1);
-                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-                auto __temp_acc = __temp.template get_access<access_mode::read>(__cgh);
-                // We cannot use __cgh.copy here because of zip_iterator usage
-                __cgh.parallel_for<_CopyBackName...>(sycl::range</*dim=*/1>(__n), [=](sycl::item</*dim=*/1> __item_id) {
-                    __rng[__item_id.get_linear_id()] = __temp_acc[__item_id];
+            __event1 = __exec.queue().submit(
+                [&](sycl::handler& __cgh)
+                {
+                    __cgh.depends_on(__event1);
+                    oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                    auto __temp_acc = __temp.template get_access<access_mode::read>(__cgh);
+                    // We cannot use __cgh.copy here because of zip_iterator usage
+                    __cgh.parallel_for<_CopyBackName...>(sycl::range</*dim=*/1>(__n),
+                                                         [=](sycl::item</*dim=*/1> __item_id)
+                                                         { __rng[__item_id.get_linear_id()] = __temp_acc[__item_id]; });
                 });
-            });
         }
 
         return __future(__event1, __temp);
@@ -1304,30 +1346,34 @@ struct __parallel_partial_sort_submitter<__internal::__optional_kernel_name<_Glo
         sycl::event __event1;
         do
         {
-            __event1 = __exec.queue().submit([&, __data_in_temp, __k](sycl::handler& __cgh) {
-                __cgh.depends_on(__event1);
-                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-                auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
-                __cgh.parallel_for<_GlobalSortName...>(
-                    sycl::range</*dim=*/1>(__n), [=](sycl::item</*dim=*/1> __item_id) {
-                        auto __global_idx = __item_id.get_linear_id();
-
-                        _Size __start = 2 * __k * (__global_idx / (2 * __k));
-                        _Size __end_1 = sycl::min(__start + __k, __n);
-                        _Size __end_2 = sycl::min(__start + 2 * __k, __n);
-
-                        if (!__data_in_temp)
+            __event1 = __exec.queue().submit(
+                [&, __data_in_temp, __k](sycl::handler& __cgh)
+                {
+                    __cgh.depends_on(__event1);
+                    oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                    auto __temp_acc = __temp.template get_access<access_mode::read_write>(__cgh);
+                    __cgh.parallel_for<_GlobalSortName...>(
+                        sycl::range</*dim=*/1>(__n),
+                        [=](sycl::item</*dim=*/1> __item_id)
                         {
-                            __merge(__global_idx, __rng, __start, __end_1, __rng, __end_1, __end_2, __temp_acc, __start,
-                                    __comp);
-                        }
-                        else
-                        {
-                            __merge(__global_idx, __temp_acc, __start, __end_1, __temp_acc, __end_1, __end_2, __rng,
-                                    __start, __comp);
-                        }
-                    });
-            });
+                            auto __global_idx = __item_id.get_linear_id();
+
+                            _Size __start = 2 * __k * (__global_idx / (2 * __k));
+                            _Size __end_1 = sycl::min(__start + __k, __n);
+                            _Size __end_2 = sycl::min(__start + 2 * __k, __n);
+
+                            if (!__data_in_temp)
+                            {
+                                __merge(__global_idx, __rng, __start, __end_1, __rng, __end_1, __end_2, __temp_acc,
+                                        __start, __comp);
+                            }
+                            else
+                            {
+                                __merge(__global_idx, __temp_acc, __start, __end_1, __temp_acc, __end_1, __end_2, __rng,
+                                        __start, __comp);
+                            }
+                        });
+                });
             __data_in_temp = !__data_in_temp;
             __k *= 2;
         } while (__k < __n);
@@ -1335,15 +1381,17 @@ struct __parallel_partial_sort_submitter<__internal::__optional_kernel_name<_Glo
         // if results are in temporary buffer then copy back those
         if (__data_in_temp)
         {
-            __event1 = __exec.queue().submit([&](sycl::handler& __cgh) {
-                __cgh.depends_on(__event1);
-                oneapi::dpl::__ranges::__require_access(__cgh, __rng);
-                auto __temp_acc = __temp.template get_access<access_mode::read>(__cgh);
-                // we cannot use __cgh.copy here because of zip_iterator usage
-                __cgh.parallel_for<_CopyBackName...>(sycl::range</*dim=*/1>(__n), [=](sycl::item</*dim=*/1> __item_id) {
-                    __rng[__item_id.get_linear_id()] = __temp_acc[__item_id];
+            __event1 = __exec.queue().submit(
+                [&](sycl::handler& __cgh)
+                {
+                    __cgh.depends_on(__event1);
+                    oneapi::dpl::__ranges::__require_access(__cgh, __rng);
+                    auto __temp_acc = __temp.template get_access<access_mode::read>(__cgh);
+                    // we cannot use __cgh.copy here because of zip_iterator usage
+                    __cgh.parallel_for<_CopyBackName...>(sycl::range</*dim=*/1>(__n),
+                                                         [=](sycl::item</*dim=*/1> __item_id)
+                                                         { __rng[__item_id.get_linear_id()] = __temp_acc[__item_id]; });
                 });
-            });
         }
         // return future and extend lifetime of temporary buffer
         return __future(__event1, __temp);

@@ -370,7 +370,8 @@ struct tuple<T1, T...>
 
     // non-const subscript operator with tuple argument
     template <typename Size1, typename... SizeRest>
-    auto operator[](oneapi::dpl::__internal::tuple<Size1, SizeRest...> tuple_size)
+    auto
+    operator[](oneapi::dpl::__internal::tuple<Size1, SizeRest...> tuple_size)
         -> decltype(oneapi::dpl::__internal::get_value_by_idx<Size1, SizeRest...>()(*this, tuple_size))
     {
         return oneapi::dpl::__internal::get_value_by_idx<Size1, SizeRest...>()(*this, tuple_size);
@@ -378,7 +379,8 @@ struct tuple<T1, T...>
 
     // const subscript operator with tuple argument
     template <typename Size1, typename... SizeRest>
-    auto operator[](const oneapi::dpl::__internal::tuple<Size1, SizeRest...> tuple_size) const
+    auto
+    operator[](const oneapi::dpl::__internal::tuple<Size1, SizeRest...> tuple_size) const
         -> decltype(oneapi::dpl::__internal::get_value_by_idx<Size1, SizeRest...>()(*this, tuple_size))
     {
         return oneapi::dpl::__internal::get_value_by_idx<Size1, SizeRest...>()(*this, tuple_size);
@@ -386,7 +388,8 @@ struct tuple<T1, T...>
 
     // non-const subscript operator with scalar argument
     template <typename Idx>
-    auto operator[](Idx idx)
+    auto
+    operator[](Idx idx)
         -> decltype(oneapi::dpl::__internal::map_tuplewrapper(oneapi::dpl::__internal::MapValue<Idx>{idx}, *this))
     {
         return oneapi::dpl::__internal::map_tuplewrapper(oneapi::dpl::__internal::MapValue<Idx>{idx}, *this);
@@ -394,7 +397,8 @@ struct tuple<T1, T...>
 
     // const subscript operator with scalar argument
     template <typename Idx>
-    auto operator[](Idx idx) const
+    auto
+    operator[](Idx idx) const
         -> decltype(oneapi::dpl::__internal::map_tuplewrapper(oneapi::dpl::__internal::MapValue<Idx>{idx}, *this))
     {
         return oneapi::dpl::__internal::map_tuplewrapper(oneapi::dpl::__internal::MapValue<Idx>{idx}, *this);
@@ -455,8 +459,16 @@ struct tuple<>
 
     tuple(const ::std::tuple<>&) {}
 
-    tuple operator[](tuple) { return {}; }
-    tuple operator[](const tuple&) const { return {}; }
+    tuple
+    operator[](tuple)
+    {
+        return {};
+    }
+    tuple
+    operator[](const tuple&) const
+    {
+        return {};
+    }
     tuple&
     operator=(const tuple&) = default;
     tuple&

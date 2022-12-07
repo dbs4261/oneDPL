@@ -65,7 +65,8 @@ class __reduction_object
     // The reference is required so that it could be modified from a functor.
     // The parameter is here only for consistency with induction object and ignored here.
     template <typename _Index>
-    _Tp& __get_induction_or_reduction_value(_Index)
+    _Tp&
+    __get_induction_or_reduction_value(_Index)
     {
         return __acc_;
     }

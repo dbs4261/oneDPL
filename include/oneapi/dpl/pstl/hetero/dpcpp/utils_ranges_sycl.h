@@ -60,7 +60,11 @@ class all_view
     {
         return begin() + size();
     }
-    __return_t& operator[](__diff_type i) const { return begin()[i]; }
+    __return_t&
+    operator[](__diff_type i) const
+    {
+        return begin()[i];
+    }
 
     __diff_type
     size() const
@@ -80,7 +84,8 @@ class all_view
     }
 
   private:
-    static __accessor_t __create_accessor(sycl::buffer<_T, 1>& __buf, __diff_type __offset, __diff_type __n)
+    static __accessor_t
+    __create_accessor(sycl::buffer<_T, 1>& __buf, __diff_type __offset, __diff_type __n)
     {
         auto __n_buf = __dpl_sycl::__get_buffer_size(__buf);
         auto __n_acc = (__n > 0 ? __n : __n_buf);

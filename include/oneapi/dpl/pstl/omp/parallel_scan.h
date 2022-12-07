@@ -46,7 +46,8 @@ __upsweep(_Index __i, _Index __m, _Index __tilesize, _Tp* __r, _Index __lastsize
         _Index __k = __split(__m);
         oneapi::dpl::__omp_backend::__parallel_invoke_body(
             [=] { oneapi::dpl::__omp_backend::__upsweep(__i, __k, __tilesize, __r, __tilesize, __reduce, __combine); },
-            [=] {
+            [=]
+            {
                 oneapi::dpl::__omp_backend::__upsweep(__i + __k, __m - __k, __tilesize, __r + __k, __lastsize, __reduce,
                                                       __combine);
             });
@@ -72,7 +73,8 @@ __downsweep(_Index __i, _Index __m, _Index __tilesize, _Tp* __r, _Index __lastsi
             },
             // Assumes that __combine never throws.
             // TODO: Consider adding a requirement for user functors to be constant.
-            [=, &__combine] {
+            [=, &__combine]
+            {
                 oneapi::dpl::__omp_backend::__downsweep(__i + __k, __m - __k, __tilesize, __r + __k, __lastsize,
                                                         __combine(__initial, __r[__k - 1]), __combine, __scan);
             });

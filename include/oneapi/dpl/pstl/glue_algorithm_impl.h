@@ -316,7 +316,8 @@ swap_ranges(_ExecutionPolicy&& __exec, _ForwardIterator1 __first1, _ForwardItera
     typedef typename ::std::iterator_traits<_ForwardIterator2>::reference _ReferenceType2;
     return oneapi::dpl::__internal::__pattern_swap(
         ::std::forward<_ExecutionPolicy>(__exec), __first1, __last1, __first2,
-        [](_ReferenceType1 __x, _ReferenceType2 __y) {
+        [](_ReferenceType1 __x, _ReferenceType2 __y)
+        {
             using ::std::swap;
             swap(__x, __y);
         },

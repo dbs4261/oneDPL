@@ -103,8 +103,9 @@ class zip_view
     template <typename Idx, ::std::size_t... _Ip>
     auto
     make_reference(_tuple_ranges_t __t, Idx __i, ::std::index_sequence<_Ip...>) const
-        -> decltype(oneapi::dpl::__internal::tuple<decltype(::std::declval<_Ranges&>().operator[](__i))...>(
-            ::std::get<_Ip>(__t).operator[](__i)...))
+        -> decltype(oneapi::dpl::__internal::tuple<decltype(::std::declval<_Ranges&>().
+                                                            operator[](__i))...>(::std::get<_Ip>(__t).
+                                                                                 operator[](__i)...))
     {
         return oneapi::dpl::__internal::tuple<decltype(::std::declval<_Ranges&>().operator[](__i))...>(
             ::std::get<_Ip>(__t).operator[](__i)...);
@@ -124,7 +125,8 @@ class zip_view
 
     //TODO: C++ Standard states that the operator[] index should be the diff_type of the underlying range.
     template <typename Idx>
-    constexpr auto operator[](Idx __i) const
+    constexpr auto
+    operator[](Idx __i) const
         -> decltype(make_reference(::std::declval<_tuple_ranges_t>(), __i, ::std::make_index_sequence<__num_ranges>()))
     {
         return make_reference(__m_ranges, __i, ::std::make_index_sequence<__num_ranges>());
@@ -184,7 +186,8 @@ class guard_view
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying iterator
     template <typename Idx>
-    auto operator[](Idx i) const -> decltype(begin()[i])
+    auto
+    operator[](Idx i) const -> decltype(begin()[i])
     {
         return begin()[i];
     }
@@ -213,7 +216,8 @@ struct reverse_view_simple
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(__r[__i])
+    auto
+    operator[](Idx __i) const -> decltype(__r[__i])
     {
         return __r[size() - __i - 1];
     }
@@ -248,7 +252,8 @@ struct take_view_simple
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(__r[__i])
+    auto
+    operator[](Idx __i) const -> decltype(__r[__i])
     {
         return __r[__i];
     }
@@ -283,7 +288,8 @@ struct drop_view_simple
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(__r[__i])
+    auto
+    operator[](Idx __i) const -> decltype(__r[__i])
     {
         return __r[__n + __i];
     }
@@ -316,7 +322,8 @@ struct transform_view_simple
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(__f(__r[__i]))
+    auto
+    operator[](Idx __i) const -> decltype(__f(__r[__i]))
     {
         return __f(__r[__i]);
     }
@@ -372,7 +379,8 @@ struct permutation_view_simple<_R, _M, typename ::std::enable_if<oneapi::dpl::__
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(__r[__map_fn(__i)])
+    auto
+    operator[](Idx __i) const -> decltype(__r[__map_fn(__i)])
     {
         return __r[__map_fn(__i)];
     }
@@ -406,7 +414,8 @@ struct permutation_view_simple<_R, _M, typename ::std::enable_if<is_map_view<_M>
 
     //TODO: to be consistent with C++ standard, this Idx should be changed to diff_type of underlying range
     template <typename Idx>
-    auto operator[](Idx __i) const -> decltype(::std::get<0>(__data.tuple())[::std::get<1>(__data.tuple())[__i]])
+    auto
+    operator[](Idx __i) const -> decltype(::std::get<0>(__data.tuple())[::std::get<1>(__data.tuple())[__i]])
     {
         return ::std::get<0>(__data.tuple())[::std::get<1>(__data.tuple())[__i]];
     }
@@ -438,7 +447,11 @@ struct permutation_discard_view
 
     permutation_discard_view(difference_type __n) : m_count(__n) {}
 
-    oneapi::dpl::internal::ignore_copyable operator[](difference_type) const { return oneapi::dpl::internal::ignore; }
+    oneapi::dpl::internal::ignore_copyable
+    operator[](difference_type) const
+    {
+        return oneapi::dpl::internal::ignore;
+    }
 
     difference_type
     size() const

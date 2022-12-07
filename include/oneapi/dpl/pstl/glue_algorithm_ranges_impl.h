@@ -255,12 +255,14 @@ swap_ranges(_ExecutionPolicy&& __exec, _Range1&& __rng1, _Range2&& __rng2)
     using _ReferenceType1 = oneapi::dpl::__internal::__value_t<_Range1>&;
     using _ReferenceType2 = oneapi::dpl::__internal::__value_t<_Range2>&;
 
-    return oneapi::dpl::__internal::__ranges::__pattern_swap(
-        ::std::forward<_ExecutionPolicy>(__exec), views::all(::std::forward<_Range1>(__rng1)),
-        views::all(::std::forward<_Range2>(__rng2)), [](_ReferenceType1 __x, _ReferenceType2 __y) {
-            using ::std::swap;
-            swap(__x, __y);
-        });
+    return oneapi::dpl::__internal::__ranges::__pattern_swap(::std::forward<_ExecutionPolicy>(__exec),
+                                                             views::all(::std::forward<_Range1>(__rng1)),
+                                                             views::all(::std::forward<_Range2>(__rng2)),
+                                                             [](_ReferenceType1 __x, _ReferenceType2 __y)
+                                                             {
+                                                                 using ::std::swap;
+                                                                 swap(__x, __y);
+                                                             });
 }
 
 // [alg.transform]

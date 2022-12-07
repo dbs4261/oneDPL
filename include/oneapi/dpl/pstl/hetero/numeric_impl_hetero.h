@@ -213,40 +213,45 @@ __pattern_adjacent_difference(_ExecutionPolicy&& __exec, _ForwardIterator1 __fir
     // if we have the only element, just copy it according to the specification
     if (__n == 1)
     {
-        return __internal::__except_handler([&__exec, __first, __last, __d_first, __d_last, &__op]() {
-            auto __wrapped_policy = __par_backend_hetero::make_wrapped_policy<adjacent_difference_wrapper>(
-                ::std::forward<_ExecutionPolicy>(__exec));
+        return __internal::__except_handler(
+            [&__exec, __first, __last, __d_first, __d_last, &__op]()
+            {
+                auto __wrapped_policy = __par_backend_hetero::make_wrapped_policy<adjacent_difference_wrapper>(
+                    ::std::forward<_ExecutionPolicy>(__exec));
 
-            __internal::__pattern_walk2_brick(__wrapped_policy, __first, __last, __d_first,
-                                              __internal::__brick_copy<decltype(__wrapped_policy)>{},
-                                              ::std::true_type{});
+                __internal::__pattern_walk2_brick(__wrapped_policy, __first, __last, __d_first,
+                                                  __internal::__brick_copy<decltype(__wrapped_policy)>{},
+                                                  ::std::true_type{});
 
-            return __d_last;
-        });
+                return __d_last;
+            });
     }
     else
 #endif
     {
-        return __internal::__except_handler([&__exec, __first, __last, __d_first, __d_last, &__op, __n]() {
-            auto __fn = [__op](_It1ValueT __in1, _It1ValueT __in2, _It2ValueTRef __out1) {
-                __out1 = __op(__in2, __in1); // This move assignment is allowed by the C++ standard draft N4810
-            };
+        return __internal::__except_handler(
+            [&__exec, __first, __last, __d_first, __d_last, &__op, __n]()
+            {
+                auto __fn = [__op](_It1ValueT __in1, _It1ValueT __in2, _It2ValueTRef __out1)
+                {
+                    __out1 = __op(__in2, __in1); // This move assignment is allowed by the C++ standard draft N4810
+                };
 
-            auto __keep1 =
-                oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read, _ForwardIterator1>();
-            auto __buf1 = __keep1(__first, __last);
-            auto __keep2 =
-                oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write, _ForwardIterator2>();
-            auto __buf2 = __keep2(__d_first, __d_last);
+                auto __keep1 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read,
+                                                                       _ForwardIterator1>();
+                auto __buf1 = __keep1(__first, __last);
+                auto __keep2 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write,
+                                                                       _ForwardIterator2>();
+                auto __buf2 = __keep2(__d_first, __d_last);
 
-            using _Function = unseq_backend::walk_adjacent_difference<_ExecutionPolicy, decltype(__fn)>;
+                using _Function = unseq_backend::walk_adjacent_difference<_ExecutionPolicy, decltype(__fn)>;
 
-            oneapi::dpl::__par_backend_hetero::__parallel_for(__exec, _Function{__fn}, __n, __buf1.all_view(),
-                                                              __buf2.all_view())
-                .wait();
+                oneapi::dpl::__par_backend_hetero::__parallel_for(__exec, _Function{__fn}, __n, __buf1.all_view(),
+                                                                  __buf2.all_view())
+                    .wait();
 
-            return __d_last;
-        });
+                return __d_last;
+            });
     }
 }
 

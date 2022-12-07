@@ -58,7 +58,8 @@ __parallel_move_range(_RandomAccessIterator __first1, _RandomAccessIterator __la
     for (std::size_t __chunk = 0; __chunk < __policy.__n_chunks; ++__chunk)
     {
         oneapi::dpl::__omp_backend::__process_chunk(__policy, __first1, __chunk,
-                                                    [&](auto __chunk_first, auto __chunk_last) {
+                                                    [&](auto __chunk_first, auto __chunk_last)
+                                                    {
                                                         auto __chunk_offset = __chunk_first - __first1;
                                                         auto __output_it = __d_first + __chunk_offset;
                                                         std::move(__chunk_first, __chunk_last, __output_it);
@@ -111,9 +112,8 @@ __parallel_stable_sort_body(_RandomAccessIterator __xs, _RandomAccessIterator __
             __mid - __xs, __xe - __mid, __xs, __mid, __mid, __xe, __output_data.begin(), __comp,
             [&__merge, &__move_value, &__move_range](_RandomAccessIterator __as, _RandomAccessIterator __ae,
                                                      _RandomAccessIterator __bs, _RandomAccessIterator __be,
-                                                     _OutputIterator __cs, _Compare __comp) {
-                __merge(__as, __ae, __bs, __be, __cs, __comp, __move_value, __move_value, __move_range, __move_range);
-            });
+                                                     _OutputIterator __cs, _Compare __comp)
+            { __merge(__as, __ae, __bs, __be, __cs, __comp, __move_value, __move_value, __move_range, __move_range); });
 
         // Move the values from __output_data back in the original source range.
         oneapi::dpl::__omp_backend::__sort_details::__parallel_move_range(__output_data.begin(), __output_data.end(),

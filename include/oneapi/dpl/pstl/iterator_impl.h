@@ -99,7 +99,8 @@ class zip_forward_iterator
         return *this;
     }
 
-    reference operator*() const
+    reference
+    operator*() const
     {
         return __make_references<reference>()(__my_it_, ::std::make_index_sequence<__num_types>());
     }
@@ -164,8 +165,16 @@ class counting_iterator
     counting_iterator() : __my_counter_() {}
     explicit counting_iterator(_Ip __init) : __my_counter_(__init) {}
 
-    reference operator*() const { return __my_counter_; }
-    reference operator[](difference_type __i) const { return *(*this + __i); }
+    reference
+    operator*() const
+    {
+        return __my_counter_;
+    }
+    reference
+    operator[](difference_type __i) const
+    {
+        return *(*this + __i);
+    }
 
     difference_type
     operator-(const counting_iterator& __it) const
@@ -287,13 +296,18 @@ class zip_iterator
         return *this;
     }
 
-    reference operator*() const
+    reference
+    operator*() const
     {
         return oneapi::dpl::__internal::__make_references<reference>()(__my_it_,
                                                                        ::std::make_index_sequence<__num_types>());
     }
 
-    reference operator[](difference_type __i) const { return *(*this + __i); }
+    reference
+    operator[](difference_type __i) const
+    {
+        return *(*this + __i);
+    }
 
     difference_type
     operator-(const zip_iterator& __it) const
@@ -436,8 +450,16 @@ class transform_iterator
         __my_it_ = __input.__my_it_;
         return *this;
     }
-    reference operator*() const { return __my_unary_func_(*__my_it_); }
-    reference operator[](difference_type __i) const { return *(*this + __i); }
+    reference
+    operator*() const
+    {
+        return __my_unary_func_(*__my_it_);
+    }
+    reference
+    operator[](difference_type __i) const
+    {
+        return *(*this + __i);
+    }
     transform_iterator&
     operator++()
     {
@@ -617,9 +639,17 @@ class permutation_iterator
             return my_index;
     }
 
-    reference operator*() const { return my_source_it[*my_index]; }
+    reference
+    operator*() const
+    {
+        return my_source_it[*my_index];
+    }
 
-    reference operator[](difference_type __i) const { return *(*this + __i); }
+    reference
+    operator[](difference_type __i) const
+    {
+        return *(*this + __i);
+    }
 
     permutation_iterator&
     operator++()
@@ -781,8 +811,16 @@ class discard_iterator
     discard_iterator() : __my_position_() {}
     explicit discard_iterator(difference_type __init) : __my_position_(__init) {}
 
-    reference operator*() const { return internal::ignore; }
-    reference operator[](difference_type) const { return internal::ignore; }
+    reference
+    operator*() const
+    {
+        return internal::ignore;
+    }
+    reference
+    operator[](difference_type) const
+    {
+        return internal::ignore;
+    }
 
     // GCC Bug 66297: constexpr non-static member functions of non-literal types
 #if __GNUC__ && _ONEDPL_GCC_VERSION < 70200 && !(__INTEL_COMPILER || __clang__)

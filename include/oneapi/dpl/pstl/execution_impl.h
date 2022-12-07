@@ -32,7 +32,8 @@ namespace __internal
 /* predicate */
 
 template <typename _Tp>
-::std::false_type __lazy_and(_Tp, ::std::false_type)
+::std::false_type
+__lazy_and(_Tp, ::std::false_type)
 {
     return ::std::false_type{};
 }
@@ -45,7 +46,8 @@ __lazy_and(_Tp __a, ::std::true_type)
 }
 
 template <typename _Tp>
-::std::true_type __lazy_or(_Tp, ::std::true_type)
+::std::true_type
+__lazy_or(_Tp, ::std::true_type)
 {
     return ::std::true_type{};
 }
