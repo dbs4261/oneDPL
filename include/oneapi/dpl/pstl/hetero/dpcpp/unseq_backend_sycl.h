@@ -585,6 +585,40 @@ struct __global_scan_functor
     }
 };
 
+template <typename _Inclusive, typename _BinaryOp, typename _InitType>
+struct __global_scan_make_op_functor        // copied from __global_scan_functor; some logic changed
+{
+    _BinaryOp __binary_op;
+    _InitType __init;
+
+    template <typename _Item, typename _OutAcc, typename _InAcc, typename _WgSumsAcc, typename _Size,
+              typename _SizePerWg>
+    void
+    operator()(_Item __item, _OutAcc& __out_acc, const _InAcc& __in_acc, const _WgSumsAcc& /*__wg_sums_acc*/, _Size /*__n*/,
+               _SizePerWg __size_per_wg) const
+    {
+        // TODO required to remove not used params and types
+        auto __item_idx = __item.get_linear_id();
+        auto __item_idx_dst = __item_idx;
+
+        if (__item_idx_dst >= __size_per_wg)
+            __item_idx_dst = __item_idx_dst % __size_per_wg;
+
+        using _Tp = typename _InitType::__value_type;
+        __init_processing<_Tp> __use_init{};
+
+        if (__item_idx > 0)
+        {
+            __out_acc[__item_idx_dst] = __in_acc[__item_idx_dst];
+            __use_init(__init, __out_acc[__item_idx_dst], __binary_op);
+        }
+        else
+        {
+            __use_init(__init, __out_acc[__item_idx_dst]);
+        }
+    }
+};
+
 template <typename _Inclusive, typename _ExecutionPolicy, typename _BinaryOperation, typename _UnaryOp,
           typename _WgAssigner, typename _GlobalAssigner, typename _DataAccessor, typename _InitType>
 struct __scan

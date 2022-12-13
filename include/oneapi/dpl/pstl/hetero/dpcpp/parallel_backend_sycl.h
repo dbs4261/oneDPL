@@ -188,6 +188,9 @@ template <typename... _Name>
 class __scan_group_kernel;
 
 template <typename... _Name>
+class __scan_group_kernel_global;
+
+template <typename... _Name>
 class __find_or_kernel;
 
 template <typename... _Name>
@@ -520,6 +523,95 @@ __parallel_transform_scan(_ExecutionPolicy&& __exec, _Range1&& __rng1, _Range2&&
         ::std::forward<_ExecutionPolicy>(__exec), ::std::forward<_Range1>(__rng1), ::std::forward<_Range2>(__rng2),
         __binary_op, __init, __local_scan, __group_scan, __global_scan);
 }
+
+// Please see the comment for __parallel_for_submitter for optional kernel name explanation
+template <typename _CustomName, typename _PropagateScanName>
+struct __parallel_scan_submitter_global_only;
+
+// Even if this class submits three kernel optional name is allowed to be only for one of them
+// because for two others we have to provide the name to get the reliable work group size
+template <typename _CustomName, typename... _PropagateScanName>
+struct __parallel_scan_submitter_global_only<_CustomName, __internal::__optional_kernel_name<_PropagateScanName...>>
+{
+    template <typename _ExecutionPolicy, typename _Range1, typename _Range2, typename _BinaryOperation,
+              typename _InitType, typename _GlobalScan>
+    auto
+    operator()(_ExecutionPolicy&& __exec, _Range1&& __rng1, _Range2&& __rng2, _BinaryOperation __binary_op,
+               _InitType __init, _GlobalScan __global_scan) const
+    {
+        // we send as last param __global_scan_make_op_functor to this function
+
+        using _Type = typename _InitType::__value_type;
+
+        using _GroupScanKernel = oneapi::dpl::__par_backend_hetero::__internal::__kernel_name_generator<__scan_group_kernel_global, _CustomName, _Range1, _Range2, _Type, _GlobalScan>;
+        auto __n = __rng1.size();           // STACK: 5?
+        assert(__n > 0);
+
+        auto __mcu = oneapi::dpl::__internal::__max_compute_units(__exec);
+        // TODO: find a way to generalize getting of reliable work-group sizes
+        ::std::size_t __wgroup_size = oneapi::dpl::__internal::__max_work_group_size(__exec);
+        // change __wgroup_size according to local memory limit
+        __wgroup_size = oneapi::dpl::__internal::__max_local_allocation_size(__exec, sizeof(_Type), __wgroup_size);
+
+#if _ONEDPL_COMPILE_KERNEL
+        //Actually there is one kernel_bundle for the all kernels of the pattern.
+        auto __group_scan_kernel = __internal::__kernel_compiler<_GroupScanKernel>::__compile(__exec);
+        __wgroup_size = ::std::min({__wgroup_size, oneapi::dpl::__internal::__kernel_work_group_size(__exec, __group_scan_kernel)});
+#endif
+
+        // Practically this is the better value that was found
+        constexpr decltype(__wgroup_size) __iters_per_witem = 16;
+        auto __size_per_wg = __iters_per_witem * __wgroup_size;
+        auto __n_groups = (__n - 1) / __size_per_wg + 1;
+        // Storage for the results of scan for each workgroup
+        sycl::buffer<_Type> __wg_sums(__n_groups);
+
+        _PRINT_INFO_IN_DEBUG_MODE(__exec, __wgroup_size, __mcu);
+
+        // 1. Final scan for whole range
+        auto __final_event = __exec.queue().submit(
+            [&](sycl::handler& __cgh)
+            {
+                //__cgh.depends_on(__submit_event);
+
+                oneapi::dpl::__ranges::__require_access(__cgh, __rng1, __rng2); //get an access to data under SYCL buffer
+
+                auto __wg_sums_acc = __wg_sums.template get_access<access_mode::read>(__cgh);
+
+                __cgh.parallel_for<_PropagateScanName...>(
+                    sycl::range<1>(__n_groups * __size_per_wg),
+                    __global_scan_caller<_GlobalScan,
+                                         typename ::std::decay<_Range2>::type,
+                                         typename ::std::decay<_Range1>::type,
+                                         decltype(__wg_sums_acc), decltype(__n)>(
+                        __global_scan,                                                  // we send as last param __global_scan_make_op_functor to this function
+                        __rng2, __rng1, __wg_sums_acc, __n, __size_per_wg));
+            });
+
+        return __future(__final_event, sycl::buffer(__wg_sums, sycl::id<1>(__n_groups - 1), sycl::range<1>(1)));
+    }
+};
+
+template <typename _ExecutionPolicy, typename _Range1, typename _Range2, typename _BinaryOperation, typename _InitType,
+          typename _GlobalScan,
+          oneapi::dpl::__internal::__enable_if_device_execution_policy<_ExecutionPolicy, int> = 0>
+auto
+__parallel_transform_scan_global_only(_ExecutionPolicy&& __exec, _Range1&& __rng1, _Range2&& __rng2, _BinaryOperation __binary_op,
+                                      _InitType __init, _GlobalScan __global_scan)
+{
+    // we send as last param __global_scan_make_op_functor to this function
+
+    using _Policy = typename ::std::decay<_ExecutionPolicy>::type;
+    using _CustomName = typename _Policy::kernel_name;
+
+    using _PropagateKernel =
+        oneapi::dpl::__par_backend_hetero::__internal::__kernel_name_provider<__scan_group_kernel_global<_CustomName>>;
+
+    return __parallel_scan_submitter_global_only<_CustomName, _PropagateKernel>()( // STACK: 4.1?
+        ::std::forward<_ExecutionPolicy>(__exec), ::std::forward<_Range1>(__rng1), ::std::forward<_Range2>(__rng2),
+        __binary_op, __init, __global_scan);
+}
+
 
 //------------------------------------------------------------------------
 // find_or tags

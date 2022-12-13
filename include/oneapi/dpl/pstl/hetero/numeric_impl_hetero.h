@@ -112,44 +112,124 @@ __pattern_transform_reduce(_ExecutionPolicy&& __exec, _ForwardIterator __first, 
 // transform_scan
 //------------------------------------------------------------------------
 
+template <typename T>
+struct ExecutionPolicyWrapper;
+
+template <typename T>
+struct ExecutionPolicyWrapperGlobalScan;
+
+template <typename T>
+void reset_init_value(oneapi::dpl::unseq_backend::__no_init_value<T>&)
+{
+}
+
+template <typename T>
+void
+reset_init_value(oneapi::dpl::unseq_backend::__init_value<T>& val)
+{
+    val.__value = T{};
+}
+
 template <typename _ExecutionPolicy, typename _Iterator1, typename _Iterator2, typename _UnaryOperation,
           typename _InitType, typename _BinaryOperation, typename _Inclusive>
 oneapi::dpl::__internal::__enable_if_hetero_execution_policy<_ExecutionPolicy, _Iterator2>
 __pattern_transform_scan_base(_ExecutionPolicy&& __exec, _Iterator1 __first, _Iterator1 __last, _Iterator2 __result,
-                              _UnaryOperation __unary_op, _InitType __init, _BinaryOperation __binary_op, _Inclusive)
+                              _UnaryOperation __unary_op, _InitType __init, _BinaryOperation __binary_op, _Inclusive __inclusive)
 {
     if (__first == __last)
         return __result;
 
     using _Type = typename _InitType::__value_type;
-    using _Assigner = unseq_backend::__scan_assigner;
-    using _NoAssign = unseq_backend::__scan_no_assign;
+    using _Assigner     = unseq_backend::__scan_assigner;
+    using _NoAssign     = unseq_backend::__scan_no_assign;
     using _UnaryFunctor = unseq_backend::walk_n<_ExecutionPolicy, _UnaryOperation>;
-    using _NoOpFunctor = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
+    using _NoOpFunctor  = unseq_backend::walk_n<_ExecutionPolicy, oneapi::dpl::__internal::__no_op>;
 
-    _Assigner __assign_op;
-    _NoAssign __no_assign_op;
+    _Assigner    __assign_op;
+    _NoAssign    __no_assign_op;
     _NoOpFunctor __get_data_op;
 
     auto __n = __last - __first;
-    auto __keep1 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read, _Iterator1>();
-    auto __buf1 = __keep1(__first, __last);
-    auto __keep2 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write, _Iterator2>();
-    auto __buf2 = __keep2(__result, __result + __n);
 
-    oneapi::dpl::__par_backend_hetero::__parallel_transform_scan(
-        ::std::forward<_ExecutionPolicy>(__exec), __buf1.all_view(), __buf2.all_view(), __binary_op, __init,
-        // local scan
-        unseq_backend::__scan<_Inclusive, _ExecutionPolicy, _BinaryOperation, _UnaryFunctor, _Assigner, _Assigner,
-                              _NoOpFunctor, _InitType>{__binary_op, _UnaryFunctor{__unary_op}, __assign_op, __assign_op,
-                                                       __get_data_op},
-        // scan between groups
-        unseq_backend::__scan</*inclusive=*/::std::true_type, _ExecutionPolicy, _BinaryOperation, _NoOpFunctor,
-                              _NoAssign, _Assigner, _NoOpFunctor, unseq_backend::__no_init_value<_Type>>{
-            __binary_op, _NoOpFunctor{}, __no_assign_op, __assign_op, __get_data_op},
-        // global scan
-        unseq_backend::__global_scan_functor<_Inclusive, _BinaryOperation, _InitType>{__binary_op, __init})
-        .wait();
+    const bool bInplaceExclusiveScan = __n > 1 && !__inclusive.value && __first == __result;
+    if (!bInplaceExclusiveScan)
+    {
+        auto __keep1 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read, _Iterator1>();
+        auto __buf1 = __keep1(__first, __last);
+        auto __keep2 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write, _Iterator2>();
+        auto __buf2 = __keep2(__result, __result + __n);
+
+        oneapi::dpl::__par_backend_hetero::__parallel_transform_scan(           // STACK: 3
+            ::std::forward<_ExecutionPolicy>(__exec), __buf1.all_view(), __buf2.all_view(), __binary_op, __init,
+            // local scan
+            unseq_backend::__scan<_Inclusive, _ExecutionPolicy, _BinaryOperation, _UnaryFunctor, _Assigner, _Assigner, _NoOpFunctor, _InitType>
+                { __binary_op, _UnaryFunctor{__unary_op}, __assign_op, __assign_op, __get_data_op },
+            // scan between groups
+            unseq_backend::__scan</*inclusive=*/::std::true_type, _ExecutionPolicy, _BinaryOperation, _NoOpFunctor, _NoAssign, _Assigner, _NoOpFunctor, unseq_backend::__no_init_value<_Type>>
+                { __binary_op, _NoOpFunctor{}, __no_assign_op, __assign_op, __get_data_op },
+            // global scan
+            unseq_backend::__global_scan_functor<_Inclusive, _BinaryOperation, _InitType>
+                {__binary_op, __init }
+        ).wait();
+    }
+    else
+    {
+        // Special case for inplace inclusive scan
+        // See https://jira.devtools.intel.com/browse/ONEDPL-490
+        //      Prototype from Dvorskiy, Mikhail for workaround of the bug in inplace exclusive scan
+        //          1) through inclusive scan: https://godbolt.org/z/nGva6eTM3
+        //                                         https://godbolt.org/z/PhE6Whxbv - with a little modifications from my side
+        //          2) through inclusive scan and transform_output_iterator: https://godbolt.org/z/qWvze8zMs
+
+        auto __keep1 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read, _Iterator1>();
+        auto __buf1 = __keep1(__first + 1, __last);
+        auto __keep2 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write, _Iterator2>();
+        auto __buf2 = __keep2(__result + 1, __result + __n);
+
+        auto newExecPolicy = __par_backend_hetero::make_wrapped_policy<ExecutionPolicyWrapper>(::std::forward<_ExecutionPolicy>(__exec));
+        using NewExecutionPolicy = decltype(newExecPolicy);
+
+        using InclusiveScan = ::std::true_type;
+
+        auto __tmp_init = __init;
+        reset_init_value(__tmp_init);
+
+        // Step 1: make inclusive scan from second item till the end
+        oneapi::dpl::__par_backend_hetero::__parallel_transform_scan(           // STACK: 3X
+            newExecPolicy, __buf1.all_view(), __buf2.all_view(), __binary_op, __tmp_init,
+            // local scan
+            unseq_backend::__scan<InclusiveScan, NewExecutionPolicy, _BinaryOperation, _UnaryFunctor, _Assigner, _Assigner, _NoOpFunctor, _InitType>
+                { __binary_op, _UnaryFunctor{__unary_op}, __assign_op, __assign_op, __get_data_op },
+            // scan between groups
+            unseq_backend::__scan<InclusiveScan, NewExecutionPolicy, _BinaryOperation, _NoOpFunctor, _NoAssign, _Assigner, _NoOpFunctor, unseq_backend::__no_init_value<_Type>>
+                { __binary_op, _NoOpFunctor{}, __no_assign_op, __assign_op, __get_data_op },
+            // global scan
+            unseq_backend::__global_scan_functor<InclusiveScan, _BinaryOperation, _InitType>
+                {__binary_op, __tmp_init }
+        ).wait();
+
+        // Step 2:
+        //      result[0] = init;
+        //      std::for_each(result + 1, result + n, [init](auto& a) { a += init;});
+        if (0)
+        {
+            auto __keep1 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::read, _Iterator1>();
+            auto __buf1 = __keep1(__first, __last);
+            auto __keep2 = oneapi::dpl::__ranges::__get_sycl_range<__par_backend_hetero::access_mode::write, _Iterator2>();
+            auto __buf2 = __keep2(__result, __result + __n);
+
+            auto newExecPolicy = __par_backend_hetero::make_wrapped_policy<ExecutionPolicyWrapperGlobalScan>(::std::forward<_ExecutionPolicy>(__exec));
+            using NewExecutionPolicy = decltype(newExecPolicy);
+
+            // Or we should simple call __parallel_for ?  // TODO
+            oneapi::dpl::__par_backend_hetero::__parallel_transform_scan_global_only( // STACK: 3X?
+                newExecPolicy, __buf1.all_view(), __buf2.all_view(), __binary_op, __init,
+                // global scan
+                unseq_backend::__global_scan_make_op_functor<::std::false_type, _BinaryOperation, _InitType>
+                    {__binary_op, __init }
+            ).wait();
+        }
+    }
 
     return __result + __n;
 }
@@ -164,7 +244,7 @@ __pattern_transform_scan(_ExecutionPolicy&& __exec, _Iterator1 __first, _Iterato
     using _RepackedType = __par_backend_hetero::__repacked_tuple_t<_Type>;
     using _InitType = unseq_backend::__init_value<_RepackedType>;
 
-    return __pattern_transform_scan_base(::std::forward<_ExecutionPolicy>(__exec), __first, __last, __result,
+    return __pattern_transform_scan_base(::std::forward<_ExecutionPolicy>(__exec), __first, __last, __result,       // STACK: 2
                                          __unary_op, _InitType{__init}, __binary_op, _Inclusive{});
 }
 
