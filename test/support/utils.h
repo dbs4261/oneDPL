@@ -77,8 +77,9 @@ inline void
 issue_error_message(::std::stringstream& outstr)
 {
     outstr << ::std::endl;
+    ::std::cout << outstr.str();
     ::std::cerr << outstr.str();
-    ::std::exit(EXIT_FAILURE);
+    //::std::exit(EXIT_FAILURE);
 }
 
 inline void
@@ -143,14 +144,17 @@ expect_equal_val(Sequence<T>& expected, Sequence<T>& actual, const char* file, s
 }
 
 template <typename Iterator1, typename Iterator2, typename Size>
-void
+size_t
 expect_equal(Iterator1 expected_first, Iterator2 actual_first, Size n, const char* file, std::int32_t line,
              const char* message)
 {
     size_t error_count = 0;
     for (size_t k = 0; k < n && error_count < 10; ++k, ++expected_first, ++actual_first)
     {
-        if (!(*expected_first == *actual_first))
+        const auto expected_val = *expected_first;
+        const auto actual_val = *actual_first;
+
+        if (!(expected_val == actual_val))
         {
             ::std::stringstream outstr;
             outstr << "error at " << file << ":" << line << " - " << message << ", at index " << k;
@@ -158,6 +162,8 @@ expect_equal(Iterator1 expected_first, Iterator2 actual_first, Size n, const cha
             ++error_count;
         }
     }
+
+    return error_count;
 }
 
 struct MemoryChecker
