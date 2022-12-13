@@ -190,7 +190,7 @@ public:
 
 private:
 
-    void copy_data_impl(_ValueType* __src, _ValueType* __ptr, __difference_type __count)
+    void copy_data_impl(const _ValueType* __src, _ValueType* __ptr, __difference_type __count)
     {
 #if _ONEDPL_LIBSYCL_VERSION >= 50300
         __queue.copy(__src, __ptr, __count);
