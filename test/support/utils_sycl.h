@@ -203,7 +203,8 @@ test2buffers()
         auto inout2_offset_first = test_base_data.get_start_from(UDTKind::eVals);
 
         // 3. run algorithms
-        for (size_t n = 1; n <= max_n; n = n <= 16 ? n + 1 : size_t(3.1415 * n))
+        //for (size_t n = 1; n <= max_n; n = n <= 16 ? n + 1 : size_t(3.1415 * n))
+        for (size_t n = 2; n <= max_n; n = n <= 16 ? n + 1 : size_t(3.1415 * n))
         {
 #    if _ONEDPL_DEBUG_SYCL
             ::std::cout << "n = " << n << ::std::endl;
