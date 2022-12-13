@@ -681,22 +681,38 @@ struct __scan
     template <typename _NDItemId, typename _Size, typename _AccLocal, typename _InAcc, typename _OutAcc,
               typename _WGSumsAcc, typename _SizePerWG, typename _WGSize, typename _ItersPerWG>
     void
-    scan_impl(_NDItemId __item, _Size __n, _AccLocal& __local_acc, const _InAcc& __acc, _OutAcc& __out_acc,
-              _WGSumsAcc& __wg_sums_acc, _SizePerWG __size_per_wg, _WGSize __wgroup_size, _ItersPerWG __iters_per_wg,
-              _InitType __init, std::true_type /*has_known_identity*/) const
+    scan_impl(_NDItemId          __item,             // Processing data item in ND-range
+              const _Size        __n,                // The whole source input data size
+              _AccLocal&         __local_acc,        // (RW) Accessor to workitem local data
+              const _InAcc&      __acc,              // (R)  Accessor to source input data [0... __n - 1]
+              _OutAcc&           __out_acc,          // (W)  Accessor to save results data [0... __n - 1]
+              _WGSumsAcc&        __wg_sums_acc,      // (W)  Accessor to storage with results of scan for each workgroup [0... <work groups count> - 1]
+              const _SizePerWG   __size_per_wg,      // The count of source data elements for each working group
+              const _WGSize      __wgroup_size,
+              const _ItersPerWG  __iters_per_wg,     // Iterations (?) per working group
+              const _InitType    __init,             // Initial value for exclusive scan
+              std::true_type /*has_known_identity*/) const
     {
-        auto __group_id = __item.get_group(0);
-        auto __global_id = __item.get_global_id(0);
-        auto __local_id = __item.get_local_id(0);
-        auto __use_init = __init_processing<_Tp>{};
+        // Group ID in dimension 0
+        const auto __group_id = __item.get_group(0);
 
-        auto __shift = 0;
-        __internal::__invoke_if_not(_Inclusive{}, [&]() { __shift = 1; });
+        // Get constituent global id representing the work-item’s position in the global iteration space (dim 0)
+        const auto __global_id = __item.get_global_id(0);
 
-        auto __adjusted_global_id = __local_id + __size_per_wg * __group_id;
+        // Get the constituent element of the local id representing the work-item’s position
+        // within the current work-group in the given Dimension (dim 0).
+        const auto __local_id = __item.get_local_id(0);
+
+        const auto __use_init = __init_processing<_Tp>{};
+
+        // Shift of index inside group: 1 for exclusive scan, 0 for inclusive scan
+        const auto __shift = _Inclusive().value ? 0 : 1;
+
         auto __adder = __local_acc[0];
+        auto __adjusted_global_id = __local_id + __size_per_wg * __group_id;
         for (auto __iter = 0; __iter < __iters_per_wg; ++__iter, __adjusted_global_id += __wgroup_size)
         {
+            // Copy one data item: __local_acc[__local_id] <- __acc[__adjusted_global_id]
             if (__adjusted_global_id < __n)
                 __local_acc[__local_id] = __data_acc(__adjusted_global_id, __acc);
             else
@@ -709,6 +725,9 @@ struct __scan
             else if (__adjusted_global_id == 0)
                 __use_init(__init, __old_value, __bin_op);
 
+            // Perform a scan over values held directly by the work-items in a group,
+            // and the result returned to each work-item represents a partial prefix sum
+            //decltype(__local_acc)::dummy;
             __local_acc[__local_id] =
                 __dpl_sycl::__inclusive_scan_over_group(__item.get_group(), __old_value, __bin_op);
             __dpl_sycl::__group_barrier(__item);
